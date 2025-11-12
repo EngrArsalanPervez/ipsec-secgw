@@ -14,5 +14,6 @@
 extern uint8_t device_type;
 
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool);
+void decapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts);
 
 #endif

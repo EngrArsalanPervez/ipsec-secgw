@@ -83,3 +83,38 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
         pkts[i] = new_m;
     }
 }
+
+// --- Remove outer Ethernet + IPv4 headers ---
+struct rte_mbuf *remove_eth_ip_headers(struct rte_mbuf *m)
+{
+    const uint16_t hdr_len = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr);
+
+    if (rte_pktmbuf_data_len(m) < hdr_len) {
+        RTE_LOG(ERR, USER1, "Packet too short to remove headers\n");
+        return NULL;
+    }
+
+    // Move data pointer forward to skip Ethernet + IP headers
+    if (rte_pktmbuf_adj(m, hdr_len) == NULL) {
+        RTE_LOG(ERR, USER1, "Failed to strip headers\n");
+        return NULL;
+    }
+
+    return m; // trimmed mbuf
+}
+
+// --- Decapsulation wrapper ---
+void decapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts)
+{
+    for (uint8_t i = 0; i < nb_pkts; i++) {
+        struct rte_mbuf *inner = remove_eth_ip_headers(pkts[i]);
+        if (inner == NULL) {
+            RTE_LOG(WARNING, USER1, "Decapsulation failed for packet %u\n", i);
+            continue;
+        }
+
+        // Disable checksum offloads for this mbuf
+        inner->ol_flags &=
+                ~(RTE_MBUF_F_TX_IP_CKSUM | RTE_MBUF_F_TX_TCP_CKSUM | RTE_MBUF_F_TX_UDP_CKSUM);
+    }
+}

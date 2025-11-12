@@ -547,6 +547,10 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t 
 
     prepare_tx_burst(m_table, n, port, qconf);
 
+    if (port == 0) {
+        decapsulate_pkt(m_table, n);
+    }
+
     ret = rte_eth_tx_burst(port, queueid, m_table, n);
 
     core_stats_update_tx(ret);
