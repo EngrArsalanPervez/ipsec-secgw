@@ -1541,6 +1541,18 @@ static int parse_schedule_type(struct eh_conf *conf, const char *optarg)
     return 0;
 }
 
+int config_hclos_lclos(char *optarg)
+{
+    if (strcmp(optarg, "LEFT") == 0) {
+        device_type = 1;
+        return 0;
+    } else if (strcmp(optarg, "RIGHT") == 0) {
+        device_type = 0;
+        return 0;
+    } else
+        return -1;
+}
+
 static int32_t parse_args(int32_t argc, char **argv, struct eh_conf *eh_conf)
 {
     int opt;
@@ -1549,11 +1561,12 @@ static int32_t parse_args(int32_t argc, char **argv, struct eh_conf *eh_conf)
     int32_t option_index;
     char *prgname = argv[0];
     int32_t f_present = 0;
+    int32_t d_present = 0;
     struct eventmode_conf *em_conf = NULL;
 
     argvopt = argv;
 
-    while ((opt = getopt_long(argc, argvopt, "aelp:Pu:f:j:w:c:t:s:", lgopts, &option_index)) !=
+    while ((opt = getopt_long(argc, argvopt, "aelp:Pu:d:f:j:w:c:t:s:", lgopts, &option_index)) !=
            EOF) {
         switch (opt) {
         case 'p':
@@ -1575,6 +1588,22 @@ static int32_t parse_args(int32_t argc, char **argv, struct eh_conf *eh_conf)
                 print_usage(prgname);
                 return -1;
             }
+            break;
+        case 'd':
+            if (d_present == 1) {
+                printf("\"-d\" option present more than "
+                       "once!\n");
+                return -1;
+            }
+            ret = config_hclos_lclos(optarg);
+            if (ret < 0) {
+                printf("Invalid -d option: "
+                       "%s\n",
+                       optarg);
+                printf("Allowed Options: HCLOS or LCLOS\n");
+                return -1;
+            }
+            d_present = 1;
             break;
         case 'f':
             if (f_present == 1) {

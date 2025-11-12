@@ -56,7 +56,7 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
     uint32_t src_ip, dst_ip;
 
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        if (1) {
+        if (device_type) {
             rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &src_mac);
             rte_ether_unformat_addr("11:22:33:44:55:01", &dst_mac);
             src_ip = RTE_IPV4(10, 10, 10, 1);
