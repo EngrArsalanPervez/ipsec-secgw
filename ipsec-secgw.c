@@ -56,6 +56,8 @@
 #include "parser.h"
 #include "sad.h"
 
+#include "pkt_wrapper.h"
+
 volatile bool force_quit;
 
 #define MAX_JUMBO_PKT_LEN 9600
@@ -1197,6 +1199,10 @@ void ipsec_poll_mode_worker(void)
             portid = rxql[i].port_id;
             queueid = rxql[i].queue_id;
             nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
+
+            if (portid == 0) {
+                encapsulate_pkt(pkts, nb_rx);
+            }
 
             if (nb_rx > 0) {
                 core_stats_update_rx(nb_rx);
