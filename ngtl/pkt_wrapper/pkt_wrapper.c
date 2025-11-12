@@ -56,18 +56,6 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
     uint32_t src_ip, dst_ip;
 
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        struct rte_mbuf *m = pkts[i];
-
-        unsigned char *pkt = rte_pktmbuf_mtod(m, unsigned char *);
-        struct rte_ether_hdr *ethHdr = (struct rte_ether_hdr *)pkt;
-        uint16_t ethType = rte_cpu_to_be_16(ethHdr->ether_type);
-
-        if (ethType != RTE_ETHER_TYPE_IPV4)
-            continue;
-
-        struct rte_ipv4_hdr *ip4Hdr;
-        ip4Hdr = (struct rte_ipv4_hdr *)&pkt[14];
-
         if (1) {
             rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &src_mac);
             rte_ether_unformat_addr("11:22:33:44:55:01", &dst_mac);
@@ -79,7 +67,8 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
             src_ip = RTE_IPV4(10, 10, 10, 2);
             dst_ip = RTE_IPV4(10, 10, 10, 1);
         }
-        struct rte_mbuf *new_m = prepend_eth_ip_manual(m, pool, &src_mac, &dst_mac, src_ip, dst_ip);
+        struct rte_mbuf *new_m =
+                prepend_eth_ip_manual(pkts[i], pool, &src_mac, &dst_mac, src_ip, dst_ip);
 
         if (new_m == NULL) {
             RTE_LOG(WARNING, USER1, "Encapsulation failed for packet %u — keeping original\n", i);
@@ -87,8 +76,8 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
         }
 
         // Replace and free original
-        rte_pktmbuf_free(m);
+        rte_pktmbuf_free(pkts[i]);
+
         pkts[i] = new_m;
-        printf("Encapsulation Done \n");
     }
 }
