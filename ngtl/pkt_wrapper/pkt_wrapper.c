@@ -68,7 +68,7 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
         struct rte_ipv4_hdr *ip4Hdr;
         ip4Hdr = (struct rte_ipv4_hdr *)&pkt[14];
 
-        if (0) {
+        if (1) {
             rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &src_mac);
             rte_ether_unformat_addr("11:22:33:44:55:01", &dst_mac);
             src_ip = RTE_IPV4(10, 10, 10, 1);

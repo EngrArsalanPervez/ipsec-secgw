@@ -7,7 +7,7 @@
 #include <rte_mempool.h>
 #include <rte_ether.h>
 #include <rte_ethdev.h>
-#include <rte_ip4.h>
+#include <rte_ip.h>
 #include <rte_memcpy.h>
 #include <rte_byteorder.h>
 
