@@ -1201,7 +1201,7 @@ void ipsec_poll_mode_worker(void)
             nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
 
             if (portid == 0) {
-                encapsulate_pkt(pkts, nb_rx);
+                encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool);
             }
 
             if (nb_rx > 0) {
