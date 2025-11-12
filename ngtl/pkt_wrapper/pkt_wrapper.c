@@ -89,5 +89,6 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
         // Replace and free original
         rte_pktmbuf_free(m);
         pkts[i] = new_m;
+        printf("Encapsulation Done \n");
     }
 }
