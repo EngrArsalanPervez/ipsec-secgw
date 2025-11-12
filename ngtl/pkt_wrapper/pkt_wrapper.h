@@ -11,7 +11,7 @@
 #include <rte_memcpy.h>
 #include <rte_byteorder.h>
 
-uint8_t device_type = 0; // LEFT or RIGHT
+extern uint8_t device_type;
 
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool);
 

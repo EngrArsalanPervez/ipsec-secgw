@@ -1,5 +1,7 @@
 #include "pkt_wrapper.h"
 
+uint8_t device_type = 0; // LEFT or RIGHT
+
 // Prepend Ethernet + IPv4 header and copy original payload
 struct rte_mbuf *prepend_eth_ip_manual(struct rte_mbuf *orig, struct rte_mempool *pool,
                                        const struct rte_ether_addr *src_mac,
