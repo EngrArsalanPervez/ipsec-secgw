@@ -91,6 +91,15 @@ struct ipsec_core_statistics {
     uint64_t dropped;
     uint64_t burst_rx;
 
+    uint64_t rx_bytes;
+    uint64_t tx_bytes;
+    uint64_t rx_bytes_old;
+    uint64_t tx_bytes_old;
+    char rxBytesNormalized[32];
+    char txBytesNormalized[32];
+    float rxRate;
+    float txRate;
+
     struct {
         struct ipsec_spd_stats spd4;
         struct ipsec_spd_stats spd6;
@@ -131,20 +140,28 @@ static inline uint8_t is_unprotected_port(uint16_t port_id)
     return unprotected_port_mask & (1 << port_id);
 }
 
-static inline void core_stats_update_rx(int n)
+static inline void core_stats_update_rx(int n, struct rte_mbuf **pkts)
 {
     int lcore_id = rte_lcore_id();
     core_statistics[lcore_id].rx += n;
     core_statistics[lcore_id].rx_call++;
     if (n == MAX_PKT_BURST)
         core_statistics[lcore_id].burst_rx += n;
+
+    for (uint16_t i = 0; i < n; i++) {
+        core_statistics[lcore_id].rx_bytes += pkts[i]->pkt_len;
+    }
 }
 
-static inline void core_stats_update_tx(int n)
+static inline void core_stats_update_tx(int n, struct rte_mbuf **pkts)
 {
     int lcore_id = rte_lcore_id();
     core_statistics[lcore_id].tx += n;
     core_statistics[lcore_id].tx_call++;
+
+    for (uint16_t i = 0; i < n; i++) {
+        core_statistics[lcore_id].tx_bytes += pkts[i]->pkt_len;
+    }
 }
 
 static inline void core_stats_update_drop(int n)
@@ -163,5 +180,8 @@ static inline void free_pkts(struct rte_mbuf *mb[], uint32_t n)
 
     core_stats_update_drop(n);
 }
+
+void *flushHashTablesLcore(void *arg);
+void *logsManagerLcore(void *arg);
 
 #endif /* _IPSEC_SECGW_H_ */

@@ -62,6 +62,11 @@
 #include "sub.h"
 #include "utility.h"
 
+struct Log *head = NULL;
+struct netstatStruct netstatData[NETSTAT_ENTRIES] = { 0 };
+struct hashStats netstatStats = { 0 };
+struct appTimeStruct appTime = { 0 };
+
 volatile bool force_quit;
 
 #define MAX_JUMBO_PKT_LEN 9600
@@ -266,6 +271,58 @@ static struct rte_eth_conf port_conf = {
 
 struct socket_ctx socket_ctx[NB_SOCKETS];
 
+void flushHashTable(void)
+{
+    uint64_t curr_time = rte_get_tsc_cycles() / rte_get_timer_hz();
+    int n = 0, ret = 0;
+    for (n = 0; n < NETSTAT_ENTRIES; n++) {
+        if (netstatData[n].status == 1) {
+            if (((curr_time - netstatData[n].lastPktTime)) > 15) {
+                ret = rte_hash_lookup(NETSTAT, (void *)&netstatData[n].key);
+                if (ret >= 0) {
+                    ret = rte_hash_del_key(NETSTAT, (void *)&netstatData[ret].key);
+                    if (ret >= 0) {
+                        netstatData[ret] = (struct netstatStruct){ 0 };
+                        if (netstatStats.counts > 0)
+                            netstatStats.counts--;
+                    }
+                } else {
+                    netstatData[n] = (struct netstatStruct){ 0 };
+                }
+            }
+        }
+    }
+}
+
+void printTime(void)
+{
+    appTime.totalSecondsElapsed++;
+    appTime.sec++;
+    if (appTime.sec == 60) {
+        appTime.sec = 0;
+        appTime.min++;
+    }
+    if (appTime.min == 60) {
+        appTime.sec = appTime.min = 0;
+        appTime.hrs++;
+    }
+    if (appTime.hrs == 24) {
+        appTime.sec = appTime.min = appTime.hrs = 0;
+        appTime.day++;
+    }
+    if (appTime.day == 30) {
+        appTime.sec = appTime.min = appTime.hrs = appTime.day = 0;
+        appTime.mon++;
+    }
+    if (appTime.mon == 12) {
+        appTime.sec = appTime.min = appTime.hrs = appTime.day = appTime.mon = 0;
+        appTime.year++;
+    }
+    sprintf(appTime.time, "%04uY-%02uM-%02uD %02uH:%02um:%02us", appTime.year, appTime.mon,
+            appTime.day, appTime.hrs, appTime.min, appTime.sec);
+    printf("Time elapsed:%34s\n", appTime.time);
+}
+
 /*
  * Determine is multi-segment support required:
  *  - either frame buffer size is smaller then mtu
@@ -313,6 +370,13 @@ static void print_stats_cb(__rte_unused void *param)
     total_packets_tx = 0;
     total_packets_rx = 0;
 
+    uint64_t total_rxBytes = 0;
+    uint64_t total_txBytes = 0;
+    char total_rxBytesNormalized[32] = { 0 };
+    char total_txBytesNormalized[32] = { 0 };
+    float total_rxRate = 0;
+    float total_txRate = 0;
+
     const char clr[] = { 27, '[', '2', 'J', '\0' };
     const char topLeft[] = { 27, '[', '1', ';', '1', 'H', '\0' };
 
@@ -321,7 +385,7 @@ static void print_stats_cb(__rte_unused void *param)
 
     printf("\nCore statistics ====================================");
 
-    for (coreid = 0; coreid < RTE_MAX_LCORE; coreid++) {
+    for (coreid = 0; coreid < 2; coreid++) {
         /* skip disabled cores */
         if (rte_lcore_is_enabled(coreid) == 0)
             continue;
@@ -329,23 +393,105 @@ static void print_stats_cb(__rte_unused void *param)
                 (float)(core_statistics[coreid].burst_rx * 100) / core_statistics[coreid].rx;
         rx_per_call = (float)(core_statistics[coreid].rx) / core_statistics[coreid].rx_call;
         tx_per_call = (float)(core_statistics[coreid].tx) / core_statistics[coreid].tx_call;
+
+        bytesNormalize(core_statistics[coreid].rx_bytes, core_statistics[coreid].rxBytesNormalized);
+        bytesNormalize(core_statistics[coreid].tx_bytes, core_statistics[coreid].txBytesNormalized);
+
+        uint64_t rxBytes = core_statistics[coreid].rx_bytes - core_statistics[coreid].rx_bytes_old;
+        uint64_t txBytes = core_statistics[coreid].tx_bytes - core_statistics[coreid].tx_bytes_old;
+
+        core_statistics[coreid].rx_bytes_old = core_statistics[coreid].rx_bytes;
+        core_statistics[coreid].tx_bytes_old = core_statistics[coreid].tx_bytes;
+
+        core_statistics[coreid].rxRate = (float)((rxBytes * 8) / 1000000);
+        core_statistics[coreid].txRate = (float)((txBytes * 8) / 1000000);
+
+        total_rxRate += core_statistics[coreid].rxRate;
+        total_txRate += core_statistics[coreid].txRate;
+
         printf("\nStatistics for core %u ------------------------------"
-               "\nPackets received: %20" PRIu64 "\nPackets sent: %24" PRIu64
-               "\nPackets dropped: %21" PRIu64 "\nBurst percent: %23.2f"
-               "\nPackets per Rx call: %17.2f"
-               "\nPackets per Tx call: %17.2f",
+               "\nPackets received: %30" PRIu64 "\nPackets sent: %34" PRIu64
+               "\nPackets dropped: %31" PRIu64 "\nBurst percent:\t\t %23.2f"
+               "\nPackets per Rx call:\t\t%16.2f"
+               "\nPackets per Tx call:\t\t%16.2f"
+               "\nrx_bytes:\t%32" PRIu64 "\ntx_bytes:\t%32" PRIu64 "\nrxBytesNormalized:\t%24s"
+               "\ntxBytesNormalized:\t%24s"
+               "\nrxRate:\t\t\t%19.2f Mb/s"
+               "\ntxRate:\t\t\t%19.2f Mb/s",
                coreid, core_statistics[coreid].rx, core_statistics[coreid].tx,
-               core_statistics[coreid].dropped, burst_percent, rx_per_call, tx_per_call);
+               core_statistics[coreid].dropped, burst_percent, rx_per_call, tx_per_call,
+               core_statistics[coreid].rx_bytes, core_statistics[coreid].tx_bytes,
+               core_statistics[coreid].rxBytesNormalized, core_statistics[coreid].txBytesNormalized,
+               core_statistics[coreid].rxRate, core_statistics[coreid].txRate);
 
         total_packets_dropped += core_statistics[coreid].dropped;
         total_packets_tx += core_statistics[coreid].tx;
         total_packets_rx += core_statistics[coreid].rx;
+        total_txBytes += core_statistics[coreid].tx_bytes;
+        total_rxBytes += core_statistics[coreid].rx_bytes;
     }
+
+    bytesNormalize(total_rxBytes, total_rxBytesNormalized);
+    bytesNormalize(total_txBytes, total_txBytesNormalized);
+
     printf("\nAggregate statistics ==============================="
-           "\nTotal packets received: %14" PRIu64 "\nTotal packets sent: %18" PRIu64
-           "\nTotal packets dropped: %15" PRIu64,
-           total_packets_rx, total_packets_tx, total_packets_dropped);
-    printf("\n====================================================\n");
+           "\nTotal packets received: %24" PRIu64 "\nTotal packets sent: %28" PRIu64
+           "\nTotal packets dropped: %25" PRIu64 "\nTotal packets bytes received: %18" PRIu64
+           "\nTotal packets bytes sent:     %18" PRIu64 "\nTotal packets bytes received:%19s"
+           "\nTotal packets bytes sent:%23s"
+           "\nTotal received rate:\t\t%12.2f Mb/s"
+           "\nTotal sent rate:\t\t%12.2f Mb/s",
+           total_packets_rx, total_packets_tx, total_packets_dropped, total_rxBytes, total_txBytes,
+           total_rxBytesNormalized, total_txBytesNormalized, total_rxRate, total_txRate);
+
+
+    printf("\nNATS statistics===================================\n");
+    printf("IKE String_C2S: %s\n", ike_string[0]);
+    printf("IKE String_S2C: %s\n", ike_string[1]);
+    printf("App Statistics======================================\n");
+    // printAppStats();
+    updateAppStatsToDB();
+
+    // Interface0 Stats
+    struct interfaceStatsStruct interfaceStatsDate = { 0 };
+    interfaceStatsDate.pktsReceived = core_statistics[0].rx;
+    interfaceStatsDate.pktsSent = core_statistics[1].tx;
+    interfaceStatsDate.pktsDropped = core_statistics[0].dropped;
+    strcpy(interfaceStatsDate.rxBytes, core_statistics[0].rxBytesNormalized);
+    strcpy(interfaceStatsDate.txBytes, core_statistics[1].txBytesNormalized);
+    sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[0].rxRate);
+    sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[1].txRate);
+    updateInterfaceStatsToDB(&interfaceStatsDate, 0);
+
+    // Interface1 Stats
+    interfaceStatsDate = (struct interfaceStatsStruct){ 0 };
+    interfaceStatsDate.pktsReceived = core_statistics[1].rx;
+    interfaceStatsDate.pktsSent = core_statistics[0].tx;
+    interfaceStatsDate.pktsDropped = core_statistics[1].dropped;
+    strcpy(interfaceStatsDate.rxBytes, core_statistics[1].rxBytesNormalized);
+    strcpy(interfaceStatsDate.txBytes, core_statistics[0].txBytesNormalized);
+    sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[1].rxRate);
+    sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[0].txRate);
+    updateInterfaceStatsToDB(&interfaceStatsDate, 1);
+
+    // Device Stats
+    struct deviceStatsStruct deviceStatsDate = { 0 };
+    deviceStatsDate.totalPktsReceived = total_packets_rx;
+    deviceStatsDate.totalPktsSent = total_packets_tx;
+    deviceStatsDate.totalPktsDropped = total_packets_dropped;
+    strcpy(deviceStatsDate.totalRxBytes, total_rxBytesNormalized);
+    strcpy(deviceStatsDate.totalTxBytes, total_txBytesNormalized);
+    sprintf(deviceStatsDate.totalRxRate, "%.2f Mb/s", total_rxRate);
+    sprintf(deviceStatsDate.totalTxRate, "%.2f Mb/s", total_txRate);
+    updateDeviceStatsToDB(&deviceStatsDate);
+
+    printf("Hash statistics=====================================\n");
+    printf("NETSTAT_COUNT:%33lu\n"
+           "NETSTAT_HITS:%34lu\n",
+           netstatStats.counts, netstatStats.hits);
+    printf("Time statistics=====================================\n");
+    printTime();
+    updateTimeToDB(&appTime);
 
     rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
 }
@@ -561,7 +707,7 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t 
 
     ret = rte_eth_tx_burst(port, queueid, m_table, n);
 
-    core_stats_update_tx(ret);
+    core_stats_update_tx(ret, m_table);
 
     if (unlikely(ret < n)) {
         do {
@@ -1020,9 +1166,165 @@ static inline void route6_pkts(struct rt_ctx *rt_ctx, struct rte_mbuf *pkts[], u
         send_single_packet(pkts[i], pkt_hop & 0xff, IPPROTO_IPV6);
     }
 }
+void *flushHashTablesLcore(void *arg)
+{
+    while (!force_quit) {
+        flushHashTable();
+        rte_delay_us_sleep(1000); // sleep for 1 ms
+    }
+}
+void *logsManagerLcore(void *arg)
+{
+    while (!force_quit) {
+        int ret = pop(&head);
+        if (ret >= 0) {
+            insertNetstatToDB(&netstatData[ret]);
+        }
+        rte_delay_us_sleep(1000); // sleep for 1 ms
+    }
+}
+void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime)
+{
+    unsigned char *pkt = rte_pktmbuf_mtod(buf, unsigned char *);
+    struct rte_ether_hdr *ethHdr = (struct rte_ether_hdr *)pkt;
+
+    appStatsData[portid].eth++;
+
+    uint16_t ethType = rte_cpu_to_be_16(ethHdr->ether_type);
+
+    switch (ethType) {
+    case RTE_ETHER_TYPE_ARP: {
+        appStatsData[portid].ethTypeARP++;
+        break;
+    }
+    case RTE_ETHER_TYPE_VLAN: {
+        appStatsData[portid].ethTypeVLAN++;
+        break;
+    }
+    case RTE_ETHER_TYPE_IPV6: {
+        appStatsData[portid].ethTypeIPV6++;
+        break;
+    }
+    case RTE_ETHER_TYPE_LLDP: {
+        appStatsData[portid].ethTypeLLDP++;
+        break;
+    }
+    case RTE_ETHER_TYPE_IPV4: {
+        struct netstatHashKeyStruct netstatHashKeyData = { 0 };
+        appStatsData[portid].ethTypeIPV4++;
+
+        struct rte_ipv4_hdr *ip4Hdr;
+        ip4Hdr = (struct rte_ipv4_hdr *)&pkt[14];
+        buf->l2_len = ((ip4Hdr->version_ihl & 0x0F) * 4) + 14;
+        netstatHashKeyData.srcIP = ip4Hdr->src_addr;
+        netstatHashKeyData.dstIP = ip4Hdr->dst_addr;
+
+        switch (ip4Hdr->next_proto_id) {
+        case IPPROTO_TCP: {
+            appStatsData[portid].ipTypeTCP++;
+            struct rte_tcp_hdr *tcpHdr;
+            tcpHdr = (struct rte_tcp_hdr *)&pkt[buf->l2_len];
+            tcpServices(rte_be_to_cpu_16(tcpHdr->src_port), portid);
+            tcpServices(rte_be_to_cpu_16(tcpHdr->dst_port), portid);
+            // Key
+            netstatHashKeyData.proto = IPPROTO_TCP;
+            netstatHashKeyData.srcPort = tcpHdr->src_port;
+            netstatHashKeyData.dstPort = tcpHdr->dst_port;
+            break;
+        }
+        case IPPROTO_UDP: {
+            appStatsData[portid].ipTypeUDP++;
+            struct rte_udp_hdr *udpHdr;
+            udpHdr = (struct rte_udp_hdr *)&pkt[buf->l2_len];
+            udpServices(rte_be_to_cpu_16(udpHdr->src_port), portid);
+            udpServices(rte_be_to_cpu_16(udpHdr->dst_port), portid);
+            // Key
+            netstatHashKeyData.proto = IPPROTO_UDP;
+            netstatHashKeyData.srcPort = udpHdr->src_port;
+            netstatHashKeyData.dstPort = udpHdr->dst_port;
+            break;
+        }
+        case IPPROTO_ICMP: {
+            // Key
+            netstatHashKeyData.proto = IPPROTO_ICMP;
+            appStatsData[portid].ipTypeICMP++;
+            break;
+        }
+        case IPPROTO_ESP: {
+            // Key
+            netstatHashKeyData.proto = IPPROTO_ESP;
+            appStatsData[portid].ipTypeESP++;
+            break;
+        }
+        case IPPROTO_IGMP: {
+            // Key
+            netstatHashKeyData.proto = IPPROTO_IGMP;
+            appStatsData[portid].ipTypeIGMP++;
+            break;
+        }
+        case IPPROTO_GRE: {
+            // Key
+            netstatHashKeyData.proto = IPPROTO_GRE;
+            appStatsData[portid].ipTypeGRE++;
+            break;
+        }
+        case 0x89: {
+            // Key
+            netstatHashKeyData.proto = 0x89;
+            appStatsData[portid].ipTypeOSPF++;
+            break;
+        }
+        default: {
+            appStatsData[portid].ipTypeUNKNOWN++;
+            break;
+        }
+        }
+        // NETSTAT
+        int ret = rte_hash_lookup(NETSTAT, (void *)&netstatHashKeyData);
+        if (ret < 0) {
+            ret = rte_hash_add_key(NETSTAT, (void *)&netstatHashKeyData);
+            if (ret >= 0) {
+                netstatStats.counts++;
+                netstatData[ret].key = netstatHashKeyData;
+                netstatData[ret].status = 1;
+                netstatData[ret].srcIP = netstatHashKeyData.srcIP;
+                netstatData[ret].dstIP = netstatHashKeyData.dstIP;
+                netstatData[ret].proto = netstatHashKeyData.proto;
+                netstatData[ret].srcPort = netstatHashKeyData.srcPort;
+                netstatData[ret].dstPort = netstatHashKeyData.dstPort;
+                netstatData[ret].inPort = portid;
+                if (portid == 0) {
+                    netstatData[ret].outPort = 1;
+                } else {
+                    netstatData[ret].outPort = 0;
+                }
+                netstatData[ret].lastPktTime = lastPktTime;
+                push(&head, ret);
+            }
+        } else {
+            netstatStats.hits++;
+            netstatData[ret].lastPktTime = lastPktTime;
+        }
+
+        break;
+    }
+    default: {
+        appStatsData[portid].ethTypeUNKNOWN++;
+        break;
+    }
+    }
+    return;
+}
+
+void handle_packets(struct rte_mbuf **pkts, uint16_t nb_pkts, uint16_t portid, uint64_t lastPktTime)
+{
+    for (uint8_t i = 0; i < nb_pkts; i++) {
+        dpi(pkts[i], portid, lastPktTime);
+    }
+}
 
 static inline void process_pkts(struct lcore_conf *qconf, struct rte_mbuf **pkts, uint8_t nb_pkts,
-                                uint16_t portid)
+                                uint16_t portid, uint64_t lastPktTime)
 {
     struct ipsec_traffic traffic;
 
@@ -1211,14 +1513,12 @@ void ipsec_poll_mode_worker(void)
             portid = rxql[i].port_id;
             queueid = rxql[i].queue_id;
             nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
-
-            if (portid == 0) {
-                encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool);
-            }
+            uint64_t lastPktTime = rte_get_tsc_cycles() / rte_get_timer_hz();
+            handle_packets(pkts, nb_rx, portid, lastPktTime);
 
             if (nb_rx > 0) {
-                core_stats_update_rx(nb_rx);
-                process_pkts(qconf, pkts, nb_rx, portid);
+                core_stats_update_rx(nb_rx, pkts);
+                process_pkts(qconf, pkts, nb_rx, portid, lastPktTime);
             }
 
             /* dequeue and process completed crypto-ops */
@@ -3220,6 +3520,9 @@ int32_t main(int32_t argc, char **argv)
 
     check_all_ports_link_status(enabled_port_mask);
 
+    MyHashesSetup();
+    init_mongo_connection();
+
     if (stats_interval > 0)
         rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
     else
@@ -3280,6 +3583,7 @@ int32_t main(int32_t argc, char **argv)
     }
 
     /* clean up the EAL */
+    cleanup_mongo();
     rte_eal_cleanup();
     printf("Bye...\n");
 

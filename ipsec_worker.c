@@ -7,6 +7,9 @@
 #include <rte_lpm.h>
 #include <rte_lpm6.h>
 
+#include <pcap.h>
+#include <unistd.h>
+
 #include "event_helper.h"
 #include "ipsec.h"
 #include "ipsec-secgw.h"
@@ -386,9 +389,9 @@ static inline int process_ipsec_ev_outbound(struct ipsec_ctx *ctx, struct route_
         break;
     default:
         /*
-		 * Only plain IPv4 & IPv6 packets are allowed
-		 * on protected port. Drop the rest.
-		 */
+       * Only plain IPv4 & IPv6 packets are allowed
+       * on protected port. Drop the rest.
+       */
         RTE_LOG(ERR, IPSEC, "Unsupported packet type = %d\n", type);
         goto drop_pkt_and_exit;
     }
@@ -716,9 +719,9 @@ static void ipsec_wrkr_non_burst_int_port_drv_mode(struct eh_event_link_info *li
     socket_id = rte_lcore_to_socket_id(lcore_id);
 
     /*
-	 * Prepare security sessions table. In outbound driver mode
-	 * we always use first session configured for a given port
-	 */
+   * Prepare security sessions table. In outbound driver mode
+   * we always use first session configured for a given port
+   */
     prepare_out_sessions_tbl(socket_ctx[socket_id].sa_out, data, RTE_MAX_ETHPORTS);
 
     RTE_LOG(INFO, IPSEC,
@@ -781,10 +784,10 @@ static void ipsec_wrkr_non_burst_int_port_drv_mode(struct eh_event_link_info *li
         }
 
         /*
-		 * Since tx internal port is available, events can be
-		 * directly enqueued to the adapter and it would be
-		 * internally submitted to the eth device.
-		 */
+     * Since tx internal port is available, events can be
+     * directly enqueued to the adapter and it would be
+     * internally submitted to the eth device.
+     */
         rte_event_eth_tx_adapter_enqueue(links[0].eventdev_id, links[0].event_port_id,
                                          &ev, /* events */
                                          1, /* nb_events */
@@ -877,10 +880,10 @@ static void ipsec_wrkr_non_burst_int_port_app_mode(struct eh_event_link_info *li
             continue;
 
         /*
-		 * Since tx internal port is available, events can be
-		 * directly enqueued to the adapter and it would be
-		 * internally submitted to the eth device.
-		 */
+     * Since tx internal port is available, events can be
+     * directly enqueued to the adapter and it would be
+     * internally submitted to the eth device.
+     */
         rte_event_eth_tx_adapter_enqueue(links[0].eventdev_id, links[0].event_port_id,
                                          &ev, /* events */
                                          1, /* nb_events */
@@ -923,14 +926,28 @@ static void ipsec_eventmode_worker(struct eh_conf *conf)
     nb_wrkr_param = ipsec_eventmode_populate_wrkr_params(ipsec_wrkr);
 
     /*
-	 * Launch correct worker after checking
-	 * the event device's capabilities.
-	 */
+   * Launch correct worker after checking
+   * the event device's capabilities.
+   */
     eh_launch_worker(conf, ipsec_wrkr, nb_wrkr_param);
 }
 
 int ipsec_launch_one_lcore(void *args)
 {
+    uint32_t lcore_id = rte_lcore_id();
+
+    if (lcore_id == 2) {
+        pthread_t hash_tid;
+        if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
+            rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
+        }
+        pthread_t log_tid;
+        if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
+            rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
+        }
+        return 0;
+    }
+
     struct eh_conf *conf;
 
     conf = (struct eh_conf *)args;
