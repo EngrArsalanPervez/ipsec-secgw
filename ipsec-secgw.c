@@ -2,61 +2,65 @@
  * Copyright(c) 2016 Intel Corporation
  */
 
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <netinet/ip6.h>
-#include <string.h>
-#include <sys/queue.h>
 #include <stdarg.h>
+#include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/queue.h>
+#include <sys/types.h>
 #include <getopt.h>
+#include <pcap.h>
 
-#include <rte_common.h>
-#include <rte_bitmap.h>
-#include <rte_byteorder.h>
-#include <rte_log.h>
-#include <rte_eal.h>
-#include <rte_launch.h>
-#include <rte_cycles.h>
 #include <rte_prefetch.h>
-#include <rte_lcore.h>
-#include <rte_per_lcore.h>
-#include <rte_branch_prediction.h>
-#include <rte_interrupts.h>
-#include <rte_random.h>
-#include <rte_debug.h>
-#include <rte_ether.h>
-#include <rte_ethdev.h>
-#include <rte_mempool.h>
-#include <rte_mbuf.h>
 #include <rte_acl.h>
-#include <rte_lpm.h>
-#include <rte_lpm6.h>
-#include <rte_hash.h>
-#include <rte_jhash.h>
+#include <rte_alarm.h>
+#include <rte_bitmap.h>
+#include <rte_branch_prediction.h>
+#include <rte_byteorder.h>
+#include <rte_common.h>
 #include <rte_cryptodev.h>
-#include <rte_security.h>
+#include <rte_cycles.h>
+#include <rte_debug.h>
+#include <rte_eal.h>
+#include <rte_ethdev.h>
+#include <rte_ether.h>
+#include <rte_event_crypto_adapter.h>
 #include <rte_eventdev.h>
+#include <rte_hash.h>
+#include <rte_interrupts.h>
 #include <rte_ip.h>
 #include <rte_ip_frag.h>
-#include <rte_alarm.h>
+#include <rte_jhash.h>
+#include <rte_launch.h>
+#include <rte_lcore.h>
+#include <rte_log.h>
+#include <rte_lpm.h>
+#include <rte_lpm6.h>
+#include <rte_mbuf.h>
+#include <rte_mempool.h>
+#include <rte_per_lcore.h>
+#include <rte_random.h>
+#include <rte_security.h>
+#include <rte_tcp.h>
 #include <rte_telemetry.h>
+#include <rte_udp.h>
 
 #include "event_helper.h"
 #include "flow.h"
 #include "ipsec.h"
 #include "ipsec_worker.h"
+#include "ngtl/kni/kni.h"
 #include "parser.h"
 #include "sad.h"
 
-#include "pkt_wrapper.h"
+#include "db.h"
+#include "hashtable.h"
+#include "kni.h"
+#include "logs.h"
+#include "stats.h"
+#include "sub.h"
+#include "utility.h"
 
 volatile bool force_quit;
 
@@ -129,8 +133,8 @@ enum {
     /* long options mapped to a short option */
 
     /* first long only option value must be >= 256, so that we won't
-	 * conflict with short options
-	 */
+   * conflict with short options
+   */
     CMD_LINE_OPT_MIN_NUM = 256,
     CMD_LINE_OPT_CONFIG_NUM,
     CMD_LINE_OPT_SINGLE_SA_NUM,
@@ -239,21 +243,25 @@ struct lcore_conf {
 static struct lcore_conf lcore_conf[RTE_MAX_LCORE];
 
 static struct rte_eth_conf port_conf = {
-	.rxmode = {
-		.mq_mode	= RTE_ETH_MQ_RX_RSS,
-		.split_hdr_size = 0,
-		.offloads = RTE_ETH_RX_OFFLOAD_CHECKSUM,
-	},
-	.rx_adv_conf = {
-		.rss_conf = {
-			.rss_key = NULL,
-			.rss_hf = RTE_ETH_RSS_IP | RTE_ETH_RSS_UDP |
-				RTE_ETH_RSS_TCP | RTE_ETH_RSS_SCTP,
-		},
-	},
-	.txmode = {
-		.mq_mode = RTE_ETH_MQ_TX_NONE,
-	},
+    .rxmode =
+        {
+            .mq_mode = RTE_ETH_MQ_RX_RSS,
+            .split_hdr_size = 0,
+            .offloads = RTE_ETH_RX_OFFLOAD_CHECKSUM,
+        },
+    .rx_adv_conf =
+        {
+            .rss_conf =
+                {
+                    .rss_key = NULL,
+                    .rss_hf = RTE_ETH_RSS_IP | RTE_ETH_RSS_UDP |
+                              RTE_ETH_RSS_TCP | RTE_ETH_RSS_SCTP,
+                },
+        },
+    .txmode =
+        {
+            .mq_mode = RTE_ETH_MQ_TX_NONE,
+        },
 };
 
 struct socket_ctx socket_ctx[NB_SOCKETS];
@@ -438,11 +446,11 @@ static inline void prepare_one_packet(struct rte_mbuf *pkt, struct ipsec_traffic
     }
 
     /* Check if the packet has been processed inline. For inline protocol
-	 * processed packets, the metadata in the mbuf can be used to identify
-	 * the security processing done on the packet. The metadata will be
-	 * used to retrieve the application registered userdata associated
-	 * with the security session.
-	 */
+   * processed packets, the metadata in the mbuf can be used to identify
+   * the security processing done on the packet. The metadata will be
+   * used to retrieve the application registered userdata associated
+   * with the security session.
+   */
 
     if (pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD && rte_security_dynfield_is_registered()) {
         struct ipsec_sa *sa;
@@ -451,8 +459,8 @@ static inline void prepare_one_packet(struct rte_mbuf *pkt, struct ipsec_traffic
                 (struct rte_security_ctx *)rte_eth_dev_get_sec_ctx(pkt->port);
 
         /* Retrieve the userdata registered. Here, the userdata
-		 * registered is the SA pointer.
-		 */
+     * registered is the SA pointer.
+     */
         sa = (struct ipsec_sa *)rte_security_get_userdata(ctx, *rte_security_dynfield(pkt));
         if (sa == NULL) {
             /* userdata could not be retrieved */
@@ -460,8 +468,8 @@ static inline void prepare_one_packet(struct rte_mbuf *pkt, struct ipsec_traffic
         }
 
         /* Save SA as priv member in mbuf. This will be used in the
-		 * IPsec selector(SP-SA) check.
-		 */
+     * IPsec selector(SP-SA) check.
+     */
 
         priv = get_priv(pkt);
         priv->sa = sa;
@@ -925,14 +933,14 @@ static inline void route4_pkts(struct rt_ctx *rt_ctx, struct rte_mbuf *pkts[], u
         return;
 
     /* Need to do an LPM lookup for non-inline packets. Inline packets will
-	 * have port ID in the SA
-	 */
+   * have port ID in the SA
+   */
 
     for (i = 0; i < nb_pkts; i++) {
         if (!(pkts[i]->ol_flags & RTE_MBUF_F_TX_SEC_OFFLOAD)) {
             /* Security offload not enabled. So an LPM lookup is
-			 * required to get the hop
-			 */
+       * required to get the hop
+       */
             offset = offsetof(struct ip, ip_dst);
             dst_ip[lpm_pkts] = *rte_pktmbuf_mtod_offset(pkts[i], uint32_t *, offset);
             dst_ip[lpm_pkts] = rte_be_to_cpu_32(dst_ip[lpm_pkts]);
@@ -976,14 +984,14 @@ static inline void route6_pkts(struct rt_ctx *rt_ctx, struct rte_mbuf *pkts[], u
         return;
 
     /* Need to do an LPM lookup for non-inline packets. Inline packets will
-	 * have port ID in the SA
-	 */
+   * have port ID in the SA
+   */
 
     for (i = 0; i < nb_pkts; i++) {
         if (!(pkts[i]->ol_flags & RTE_MBUF_F_TX_SEC_OFFLOAD)) {
             /* Security offload not enabled. So an LPM lookup is
-			 * required to get the hop
-			 */
+       * required to get the hop
+       */
             offset = offsetof(struct ip6_hdr, ip6_dst);
             ip6_dst = rte_pktmbuf_mtod_offset(pkts[i], uint8_t *, offset);
             memcpy(&dst_ip[lpm_pkts][0], ip6_dst, 16);
@@ -1369,7 +1377,8 @@ static void print_usage(const char *prgname)
             "  -f CONFIG_FILE: Configuration file\n"
             "  --config (port,queue,lcore): Rx queue configuration. In poll\n"
             "                               mode determines which queues from\n"
-            "                               which ports are mapped to which cores.\n"
+            "                               which ports are mapped to which "
+            "cores.\n"
             "                               In event mode this option is not used\n"
             "                               as packets are dynamically scheduled\n"
             "                               to cores by HW.\n"
@@ -2274,9 +2283,9 @@ static size_t max_session_size(void)
         if (sz > max_sz)
             max_sz = sz;
         /*
-		 * If crypto device is security capable, need to check the
-		 * size of security session as well.
-		 */
+     * If crypto device is security capable, need to check the
+     * size of security session as well.
+     */
 
         /* Get security context of the crypto device */
         sec_ctx = rte_cryptodev_get_sec_ctx(cdev_id);
@@ -2354,9 +2363,9 @@ static void pool_init(struct socket_ctx *ctx, int32_t socket_id, uint32_t nb_mbu
                                              frame_buf_size, socket_id);
 
     /*
-	 * if multi-segment support is enabled, then create a pool
-	 * for indirect mbufs.
-	 */
+   * if multi-segment support is enabled, then create a pool
+   * for indirect mbufs.
+   */
     ms = multi_seg_required();
     if (ms != 0) {
         snprintf(s, sizeof(s), "mbuf_pool_indir_%d", socket_id);
@@ -2375,10 +2384,10 @@ static inline int inline_ipsec_event_esn_overflow(struct rte_security_ctx *ctx, 
     struct ipsec_sa *sa;
 
     /* For inline protocol processing, the metadata in the event will
-	 * uniquely identify the security session which raised the event.
-	 * Application would then need the userdata it had registered with the
-	 * security session to process the event.
-	 */
+   * uniquely identify the security session which raised the event.
+   * Application would then need the userdata it had registered with the
+   * security session to process the event.
+   */
 
     sa = (struct ipsec_sa *)rte_security_get_userdata(ctx, md);
 
@@ -2581,7 +2590,9 @@ static void create_default_ipsec_flow(uint16_t port_id, uint64_t rx_offloads)
         return;
 
     flow_info_tbl[port_id].rx_def_flow = flow;
-    RTE_LOG(INFO, IPSEC, "Created default flow enabling SECURITY for all ESP traffic on port %d\n",
+    RTE_LOG(INFO, IPSEC,
+            "Created default flow enabling SECURITY for all ESP traffic on "
+            "port %d\n",
             port_id);
 }
 
@@ -2636,10 +2647,10 @@ static int32_t check_event_mode_params(struct eh_conf *eh_conf)
         em_conf->ext_params.sched_type = RTE_SCHED_TYPE_ORDERED;
 
     /*
-	 * Event mode currently supports only inline protocol sessions.
-	 * If there are other types of sessions configured then exit with
-	 * error.
-	 */
+   * Event mode currently supports only inline protocol sessions.
+   * If there are other types of sessions configured then exit with
+   * error.
+   */
     ev_mode_sess_verify(sa_in, nb_sa_in);
     ev_mode_sess_verify(sa_out, nb_sa_out);
 
@@ -2650,9 +2661,9 @@ static int32_t check_event_mode_params(struct eh_conf *eh_conf)
     }
 
     /*
-	 * In order to use the same port_init routine for both poll and event
-	 * modes initialize lcore_params with one queue for each eth port
-	 */
+   * In order to use the same port_init routine for both poll and event
+   * modes initialize lcore_params with one queue for each eth port
+   */
     lcore_params = lcore_params_array;
     RTE_ETH_FOREACH_DEV(portid)
     {
@@ -3072,9 +3083,9 @@ int32_t main(int32_t argc, char **argv)
     sess_sz = max_session_size();
 
     /*
-	 * In event mode request minimum number of crypto queues
-	 * to be reserved equal to number of ports.
-	 */
+   * In event mode request minimum number of crypto queues
+   * to be reserved equal to number of ports.
+   */
     if (eh_conf->mode == EH_PKT_TRANSFER_MODE_EVENT)
         nb_crypto_qp = rte_eth_dev_count_avail();
     else
@@ -3139,10 +3150,10 @@ int32_t main(int32_t argc, char **argv)
     }
 
     /*
-	 * Set the enabled port mask in helper config for use by helper
-	 * sub-system. This will be used while initializing devices using
-	 * helper sub-system.
-	 */
+   * Set the enabled port mask in helper config for use by helper
+   * sub-system. This will be used while initializing devices using
+   * helper sub-system.
+   */
     eh_conf->eth_portmask = enabled_port_mask;
 
     /* Initialize eventmode components */
@@ -3167,11 +3178,11 @@ int32_t main(int32_t argc, char **argv)
         create_default_ipsec_flow(portid, req_rx_offloads[portid]);
 
         /*
-		 * If enabled, put device in promiscuous mode.
-		 * This allows IO forwarding mode to forward packets
-		 * to itself through 2 cross-connected  ports of the
-		 * target machine.
-		 */
+     * If enabled, put device in promiscuous mode.
+     * This allows IO forwarding mode to forward packets
+     * to itself through 2 cross-connected  ports of the
+     * target machine.
+     */
         if (promiscuous_on) {
             ret = rte_eth_promiscuous_enable(portid);
             if (ret != 0)
