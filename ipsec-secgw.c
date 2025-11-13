@@ -440,7 +440,7 @@ static void print_stats_cb(__rte_unused void *param)
            "\nTotal packets bytes sent:     %18" PRIu64 "\nTotal packets bytes received:%19s"
            "\nTotal packets bytes sent:%23s"
            "\nTotal received rate:\t\t%12.2f Mb/s"
-           "\nTotal sent rate:\t\t%12.2f Mb/s",
+           "\nTotal sent rate:\t\t%12.2f Mb/s\n",
            total_packets_rx, total_packets_tx, total_packets_dropped, total_rxBytes, total_txBytes,
            total_rxBytesNormalized, total_txBytesNormalized, total_rxRate, total_txRate);
 
