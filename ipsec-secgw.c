@@ -50,7 +50,6 @@
 #include "flow.h"
 #include "ipsec.h"
 #include "ipsec_worker.h"
-#include "ngtl/kni/kni.h"
 #include "parser.h"
 #include "sad.h"
 
@@ -61,6 +60,7 @@
 #include "stats.h"
 #include "sub.h"
 #include "utility.h"
+#include "pkt_wrapper.h"
 
 struct Log *head = NULL;
 struct netstatStruct netstatData[NETSTAT_ENTRIES] = { 0 };
@@ -444,10 +444,6 @@ static void print_stats_cb(__rte_unused void *param)
            total_packets_rx, total_packets_tx, total_packets_dropped, total_rxBytes, total_txBytes,
            total_rxBytesNormalized, total_txBytesNormalized, total_rxRate, total_txRate);
 
-
-    printf("\nNATS statistics===================================\n");
-    printf("IKE String_C2S: %s\n", ike_string[0]);
-    printf("IKE String_S2C: %s\n", ike_string[1]);
     printf("App Statistics======================================\n");
     // printAppStats();
     updateAppStatsToDB();
