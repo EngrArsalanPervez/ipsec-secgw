@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern char ike_string[2][1024];
-extern char ike_string_count;
+char ike_string[2][1024];
+char ike_string_count;
 
 volatile int nats_running = 1;
 
@@ -33,7 +33,7 @@ static void parse_json_message(const char *json)
         printf("Parsed DstIP: %s\n", dstip_item->valuestring);
 
     printf("++++++++++++++++++Atif these are SA Rules++++++++++++++\n");
-    print_all_sa_rules();
+    //print_all_sa_rules();
 
     cJSON_Delete(root);
 }
