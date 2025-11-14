@@ -2517,7 +2517,7 @@ static void port_init(uint16_t portid, uint64_t req_rx_offloads, uint64_t req_tx
                  ret, portid);
 
     /* init one TX queue per lcore */
-    tx_queueid = 0;
+    tx_queueid = 1;
     for (lcore_id = 0; lcore_id < RTE_MAX_LCORE; lcore_id++) {
         if (rte_lcore_is_enabled(lcore_id) == 0)
             continue;
