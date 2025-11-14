@@ -362,7 +362,6 @@ struct ipsec_core_statistics core_statistics[RTE_MAX_LCORE];
 /* Print out statistics on packet distribution */
 static void print_stats_cb(__rte_unused void *param)
 {
-    return;
     uint64_t total_packets_dropped, total_packets_tx, total_packets_rx;
     float burst_percent, rx_per_call, tx_per_call;
     unsigned int coreid;
@@ -708,7 +707,6 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t 
 
     if (unlikely(ret < n)) {
         do {
-            printf("EUP\n");
             free_pkts(&m_table[ret], 1);
         } while (++ret < n);
     }
@@ -2155,7 +2153,7 @@ int add_dst_ethaddr(uint16_t port, const struct rte_ether_addr *addr)
 static void check_all_ports_link_status(uint32_t port_mask)
 {
 #define CHECK_INTERVAL 100 /* 100ms */
-#define MAX_CHECK_TIME 10 /* 1s (10 * 100ms) in total */
+#define MAX_CHECK_TIME 90 /* 9s (90 * 100ms) in total */
     uint16_t portid;
     uint8_t count, all_ports_up, print_flag = 0;
     struct rte_eth_link link;
