@@ -385,7 +385,7 @@ static void print_stats_cb(__rte_unused void *param)
 
     printf("\nCore statistics ====================================");
 
-    for (coreid = 0; coreid < 2; coreid++) {
+    for (coreid = 0; coreid < RTE_MAX_LCORE; coreid++) {
         /* skip disabled cores */
         if (rte_lcore_is_enabled(coreid) == 0)
             continue;
