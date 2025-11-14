@@ -2,8 +2,6 @@
  * Copyright(c) 2016 Intel Corporation
  */
 
-#include "ngtl/pkt_wrapper/pkt_wrapper.h"
-#include <bits/getopt_core.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
