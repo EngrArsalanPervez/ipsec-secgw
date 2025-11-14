@@ -54,42 +54,34 @@ struct rte_mbuf *prepend_eth_ip_manual(struct rte_mbuf *orig, struct rte_mempool
 
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool)
 {
-    printf("Check1\n");
     struct rte_ether_addr src_mac, dst_mac;
     uint32_t src_ip, dst_ip;
 
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        printf("Check2\n");
         if (device_type == 1) {
-            printf("Check3\n");
             rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &src_mac);
             rte_ether_unformat_addr("11:22:33:44:55:01", &dst_mac);
             src_ip = RTE_IPV4(10, 10, 10, 1);
             dst_ip = RTE_IPV4(10, 10, 10, 2);
         } else {
-            printf("Check4\n");
             rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &dst_mac);
             rte_ether_unformat_addr("11:22:33:44:55:01", &src_mac);
             src_ip = RTE_IPV4(10, 10, 10, 2);
             dst_ip = RTE_IPV4(10, 10, 10, 1);
         }
-        printf("Check5\n");
         struct rte_mbuf *new_m =
                 prepend_eth_ip_manual(pkts[i], pool, &src_mac, &dst_mac, src_ip, dst_ip);
 
         if (new_m == NULL) {
-            printf("Check6\n");
             RTE_LOG(WARNING, USER1, "Encapsulation failed for packet %u — keeping original\n", i);
             continue;
         }
-        printf("Check7\n");
 
         // Replace and free original
         rte_pktmbuf_free(pkts[i]);
-        printf("Check8\n");
+
         pkts[i] = new_m;
     }
-    printf("Check9\n");
 }
 
 // --- Remove outer Ethernet + IPv4 headers ---
