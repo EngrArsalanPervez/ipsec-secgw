@@ -362,6 +362,7 @@ struct ipsec_core_statistics core_statistics[RTE_MAX_LCORE];
 /* Print out statistics on packet distribution */
 static void print_stats_cb(__rte_unused void *param)
 {
+    return;
     uint64_t total_packets_dropped, total_packets_tx, total_packets_rx;
     float burst_percent, rx_per_call, tx_per_call;
     unsigned int coreid;
@@ -707,6 +708,7 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t 
 
     if (unlikely(ret < n)) {
         do {
+            printf("EUP\n");
             free_pkts(&m_table[ret], 1);
         } while (++ret < n);
     }
