@@ -2153,7 +2153,7 @@ int add_dst_ethaddr(uint16_t port, const struct rte_ether_addr *addr)
 static void check_all_ports_link_status(uint32_t port_mask)
 {
 #define CHECK_INTERVAL 100 /* 100ms */
-#define MAX_CHECK_TIME 90 /* 9s (90 * 100ms) in total */
+#define MAX_CHECK_TIME 10 /* 1s (10 * 100ms) in total */
     uint16_t portid;
     uint8_t count, all_ports_up, print_flag = 0;
     struct rte_eth_link link;

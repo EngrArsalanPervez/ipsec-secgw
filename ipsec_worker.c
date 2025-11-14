@@ -936,7 +936,7 @@ int ipsec_launch_one_lcore(void *args)
 {
     uint32_t lcore_id = rte_lcore_id();
 
-    if (lcore_id == 2) {
+    if (lcore_id == 8) {
         pthread_t hash_tid;
         if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
             rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
@@ -945,6 +945,8 @@ int ipsec_launch_one_lcore(void *args)
         if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
             rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
         }
+        return 0;
+    } else if (lcore_id > 8) {
         return 0;
     }
 
