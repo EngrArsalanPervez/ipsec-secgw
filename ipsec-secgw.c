@@ -2444,7 +2444,7 @@ static void port_init(uint16_t portid, uint64_t req_rx_offloads, uint64_t req_tx
     printf("\n");
 
     nb_rx_queue = get_port_nb_rx_queues(portid);
-    nb_tx_queue = nb_lcores;
+    nb_tx_queue = 1; // nb_lcores;
 
     if (nb_rx_queue > dev_info.max_rx_queues)
         rte_exit(EXIT_FAILURE,
@@ -2543,7 +2543,7 @@ static void port_init(uint16_t portid, uint64_t req_rx_offloads, uint64_t req_tx
         qconf = &lcore_conf[lcore_id];
         qconf->tx_queue_id[portid] = tx_queueid;
 
-        tx_queueid++;
+        // tx_queueid++;
 
         /* init RX queues */
         for (queue = 0; queue < qconf->nb_rx_queue; ++queue) {
