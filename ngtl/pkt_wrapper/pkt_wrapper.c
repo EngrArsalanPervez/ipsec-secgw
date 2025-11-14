@@ -60,7 +60,7 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
 
     for (uint8_t i = 0; i < nb_pkts; i++) {
         printf("Check2\n");
-        if (device_type) {
+        if (device_type == 1) {
             printf("Check3\n");
             rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &src_mac);
             rte_ether_unformat_addr("11:22:33:44:55:01", &dst_mac);
