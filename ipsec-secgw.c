@@ -2,6 +2,7 @@
  * Copyright(c) 2016 Intel Corporation
  */
 
+#include "ngtl/pkt_wrapper/pkt_wrapper.h"
 #include <bits/getopt_core.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -1919,7 +1920,7 @@ static int32_t parse_args(int32_t argc, char **argv, struct eh_conf *eh_conf)
                 printf("Allowed Options: HCLOS or LCLOS\n");
                 return -1;
             } else {
-                printf("Device_Type: %s\n", optarg);
+                printf("Device_Type: %u\n", device_type);
             }
             d_present = 1;
             break;
