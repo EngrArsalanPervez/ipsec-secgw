@@ -29,5 +29,6 @@ typedef struct {
 
 int config_hclos_lclos(char *optarg);
 bool client_ports_contains(uint8_t port);
+void print_pkt_rules(const pkt_rules_t *r);
 
 #endif

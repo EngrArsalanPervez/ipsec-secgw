@@ -39,7 +39,7 @@ const pkt_rules_t pkt_rules_h1[RTE_MAX_ETHPORTS] = {
 
 const pkt_rules_t pkt_rules_h2[RTE_MAX_ETHPORTS] = {
     [0] = { .src_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x01 } },
-            .dst_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff } },
+            .dst_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf0 } },
             .src_ip = RTE_IPV4(10, 10, 10, 2),
             .dst_ip = RTE_IPV4(10, 10, 10, 1) },
     [1] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf1 } },
@@ -106,4 +106,30 @@ int config_hclos_lclos(char *optarg)
         return 0;
     }
     return -1;
+}
+
+void print_pkt_rules(const pkt_rules_t *r)
+{
+    if (!r) {
+        printf("NULL pkt_rules_t pointer\n");
+        return;
+    }
+
+    uint32_t src_ip = rte_be_to_cpu_32(r->src_ip);
+    uint32_t dst_ip = rte_be_to_cpu_32(r->dst_ip);
+
+    printf("src_mac=%02X:%02X:%02X:%02X:%02X:%02X, "
+           "dst_mac=%02X:%02X:%02X:%02X:%02X:%02X, "
+           "src_ip=%u.%u.%u.%u, "
+           "dst_ip=%u.%u.%u.%u\n",
+
+           r->src_mac.addr_bytes[0], r->src_mac.addr_bytes[1], r->src_mac.addr_bytes[2],
+           r->src_mac.addr_bytes[3], r->src_mac.addr_bytes[4], r->src_mac.addr_bytes[5],
+
+           r->dst_mac.addr_bytes[0], r->dst_mac.addr_bytes[1], r->dst_mac.addr_bytes[2],
+           r->dst_mac.addr_bytes[3], r->dst_mac.addr_bytes[4], r->dst_mac.addr_bytes[5],
+
+           (src_ip >> 24) & 0xFF, (src_ip >> 16) & 0xFF, (src_ip >> 8) & 0xFF, src_ip & 0xFF,
+
+           (dst_ip >> 24) & 0xFF, (dst_ip >> 16) & 0xFF, (dst_ip >> 8) & 0xFF, dst_ip & 0xFF);
 }
