@@ -1,6 +1,7 @@
 #include "stats.h"
+#include <rte_build_config.h>
 
-struct appStatsStruct appStatsData[4] = { 0 };
+struct appStatsStruct appStatsData[RTE_MAX_ETHPORTS] = { 0 };
 
 void printAppStats(void)
 {
