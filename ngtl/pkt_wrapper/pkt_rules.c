@@ -115,8 +115,8 @@ void print_pkt_rules(const pkt_rules_t *r)
         return;
     }
 
-    uint32_t src_ip = rte_be_to_cpu_32(r->src_ip);
-    uint32_t dst_ip = rte_be_to_cpu_32(r->dst_ip);
+    uint32_t src_ip = r->src_ip;
+    uint32_t dst_ip = r->dst_ip;
 
     printf("src_mac=%02X:%02X:%02X:%02X:%02X:%02X, "
            "dst_mac=%02X:%02X:%02X:%02X:%02X:%02X, "
