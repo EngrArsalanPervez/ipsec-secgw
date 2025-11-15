@@ -53,11 +53,6 @@ struct rte_mbuf *prepend_eth_ip_manual(struct rte_mbuf *orig, struct rte_mempool
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool,
                      uint16_t portid)
 {
-    if (!active_rules) {
-        printf("ERROR: Active_rules not found\n");
-        exit(1);
-    }
-
     for (uint8_t i = 0; i < nb_pkts; i++) {
         if (portid >= RTE_MAX_ETHPORTS) {
             RTE_LOG(ERR, USER1, "Invalid portid %u\n", portid);

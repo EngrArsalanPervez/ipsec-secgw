@@ -1,6 +1,7 @@
 #include "pkt_rules.h"
+#include <rte_build_config.h>
 
-const pkt_rules_t *active_rules = NULL;
+pkt_rules_t active_rules[RTE_MAX_ETHPORTS] = { 0 };
 client_ports_t client_ports;
 
 void client_ports_init(void)
@@ -102,45 +103,52 @@ int config_hclos_lclos(char *optarg)
 {
     client_ports_init();
 
-    uint32_t lcore_id;
+    const pkt_rules_t *src_rules = NULL;
+    uint32_t num_rules = 0;
 
     if (strcmp(optarg, "H1") == 0) {
-        active_rules = pkt_rules_h1;
+        src_rules = pkt_rules_h1;
+        num_rules = sizeof(pkt_rules_h1) / sizeof(pkt_rules_h1[0]);
         client_ports_add(0);
-        return 0;
     } else if (strcmp(optarg, "H2") == 0) {
-        active_rules = pkt_rules_h2;
+        src_rules = pkt_rules_h2;
+        num_rules = sizeof(pkt_rules_h2) / sizeof(pkt_rules_h2[0]);
         client_ports_add(0);
         client_ports_add(1);
         client_ports_add(2);
         client_ports_add(3);
-        return 0;
     } else if (strcmp(optarg, "L1") == 0) {
-        active_rules = pkt_rules_l1;
+        src_rules = pkt_rules_l1;
+        num_rules = sizeof(pkt_rules_l1) / sizeof(pkt_rules_l1[0]);
         client_ports_add(0);
-        return 0;
     } else if (strcmp(optarg, "L2") == 0) {
-        active_rules = pkt_rules_l2;
+        src_rules = pkt_rules_l2;
+        num_rules = sizeof(pkt_rules_l2) / sizeof(pkt_rules_l2[0]);
         client_ports_add(0);
-        return 0;
     } else if (strcmp(optarg, "L3") == 0) {
-        active_rules = pkt_rules_l3;
+        src_rules = pkt_rules_l3;
+        num_rules = sizeof(pkt_rules_l3) / sizeof(pkt_rules_l3[0]);
         client_ports_add(0);
-        return 0;
     } else if (strcmp(optarg, "L4") == 0) {
-        active_rules = pkt_rules_l4;
+        src_rules = pkt_rules_l4;
+        num_rules = sizeof(pkt_rules_l4) / sizeof(pkt_rules_l4[0]);
         client_ports_add(0);
-        return 0;
     } else if (strcmp(optarg, "L5") == 0) {
-        active_rules = pkt_rules_l5;
+        src_rules = pkt_rules_l5;
+        num_rules = sizeof(pkt_rules_l5) / sizeof(pkt_rules_l5[0]);
         client_ports_add(0);
-        return 0;
     } else if (strcmp(optarg, "L6") == 0) {
-        active_rules = pkt_rules_l6;
+        src_rules = pkt_rules_l6;
+        num_rules = sizeof(pkt_rules_l6) / sizeof(pkt_rules_l6[0]);
         client_ports_add(0);
-        return 0;
+    } else {
+        return -1; // unknown option
     }
-    return -1;
+
+    // Copy selected rules into the global active array
+    memcpy(active_rules, src_rules, num_rules * sizeof(pkt_rules_t));
+
+    return 0;
 }
 
 void print_pkt_rules(const pkt_rules_t *r)
