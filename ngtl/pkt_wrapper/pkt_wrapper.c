@@ -54,11 +54,11 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
                      uint16_t portid)
 {
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        print_pkt_rules(&pkt_rules[portid]);
-        struct rte_mbuf *new_m = prepend_eth_ip_manual(pkts[i], pool, &pkt_rules[portid].src_mac,
-                                                       &pkt_rules[portid].dst_mac,
-                                                       pkt_rules[portid].src_ip,
-                                                       pkt_rules[portid].dst_ip);
+        print_pkt_rules(&active_rules[portid]);
+        struct rte_mbuf *new_m = prepend_eth_ip_manual(pkts[i], pool, &active_rules[portid].src_mac,
+                                                       &active_rules[portid].dst_mac,
+                                                       active_rules[portid].src_ip,
+                                                       active_rules[portid].dst_ip);
 
         if (new_m == NULL) {
             RTE_LOG(WARNING, USER1, "Encapsulation failed for packet %u — keeping original\n", i);
