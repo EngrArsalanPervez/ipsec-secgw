@@ -1,6 +1,8 @@
 #include "pkt_rules.h"
+#include <cstdint>
 
 pkt_rules_t pkt_rules[RTE_MAX_ETHPORTS] = { 0 };
+client_ports_t client_ports = { 0 };
 
 const pkt_rules_t pkt_rules_h1[RTE_MAX_ETHPORTS] = {
     [0] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf0 } },
@@ -53,19 +55,35 @@ int config_hclos_lclos(char *optarg)
 {
     if (strcmp(optarg, "H1") == 0) {
         rte_memcpy(pkt_rules, pkt_rules_h1, sizeof(pkt_rules_h1));
+        client_ports.ports[client_ports.total++] = 0;
         return 0;
     } else if (strcmp(optarg, "H2") == 0) {
         rte_memcpy(pkt_rules, pkt_rules_h2, sizeof(pkt_rules_h1));
+        client_ports.ports[client_ports.total++] = 0;
+        client_ports.ports[client_ports.total++] = 1;
+        client_ports.ports[client_ports.total++] = 2;
+        client_ports.ports[client_ports.total++] = 3;
         return 0;
     } else if (strcmp(optarg, "L2") == 0) {
         rte_memcpy(pkt_rules, pkt_rules_l2, sizeof(pkt_rules_h1));
+        client_ports.ports[client_ports.total++] = 0;
         return 0;
     } else if (strcmp(optarg, "L4") == 0) {
         rte_memcpy(pkt_rules, pkt_rules_l4, sizeof(pkt_rules_h1));
+        client_ports.ports[client_ports.total++] = 0;
         return 0;
     } else if (strcmp(optarg, "L6") == 0) {
         rte_memcpy(pkt_rules, pkt_rules_l6, sizeof(pkt_rules_h1));
+        client_ports.ports[client_ports.total++] = 0;
         return 0;
     }
     return -1;
+}
+
+uint8_t check_client_port(uint8_t portid)
+{
+    for (uint8_t i; i < client_ports.total; i++) {
+        if (portid == client_ports.ports[i])
+            return 1;
+    }
 }

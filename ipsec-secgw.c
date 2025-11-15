@@ -1515,7 +1515,7 @@ void ipsec_poll_mode_worker(void)
                 uint64_t lastPktTime = rte_get_tsc_cycles() / rte_get_timer_hz();
                 handle_packets(pkts, nb_rx, portid, lastPktTime);
 
-                if (portid == 0) {
+                if (check_client_port(portid)) {
                     encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
                 }
 

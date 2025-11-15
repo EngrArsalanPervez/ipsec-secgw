@@ -1,6 +1,7 @@
 #ifndef _PKT_RULES_H_
 #define _PKT_RULES_H_
 
+#include <cstdint>
 #include <stdint.h>
 #include <rte_ether.h>
 #include <rte_ip.h>
@@ -17,6 +18,11 @@ extern const pkt_rules_t pkt_rules_h2[RTE_MAX_ETHPORTS];
 extern const pkt_rules_t pkt_rules_l2[RTE_MAX_ETHPORTS];
 extern const pkt_rules_t pkt_rules_l4[RTE_MAX_ETHPORTS];
 extern pkt_rules_t pkt_rules[RTE_MAX_ETHPORTS];
+
+typedef struct {
+    uint8_t ports[RTE_MAX_ETHPORTS];
+    uint8_t total;
+} client_ports_t;
 
 int config_hclos_lclos(char *optarg);
 

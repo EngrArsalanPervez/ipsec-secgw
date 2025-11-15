@@ -16,5 +16,6 @@
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool,
                      uint16_t portid);
 void decapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts);
+uint8_t check_client_port(uint8_t portid);
 
 #endif
