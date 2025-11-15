@@ -85,4 +85,5 @@ uint8_t check_client_port(uint8_t portid)
         if (portid == client_ports.ports[i])
             return 1;
     }
+    return 0;
 }
