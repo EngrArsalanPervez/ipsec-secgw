@@ -1905,8 +1905,6 @@ static int32_t parse_args(int32_t argc, char **argv, struct eh_conf *eh_conf)
                        optarg);
                 printf("Allowed Options: HCLOS or LCLOS\n");
                 return -1;
-            } else {
-                printf("Device_Type: %u\n", device_type);
             }
             d_present = 1;
             break;
