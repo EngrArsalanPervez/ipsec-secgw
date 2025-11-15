@@ -12,6 +12,7 @@
 #include <rte_byteorder.h>
 
 #include "pkt_rules.h"
+#include "pkt_dump.h"
 
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool,
                      uint16_t portid);

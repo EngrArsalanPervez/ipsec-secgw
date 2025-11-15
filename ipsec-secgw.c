@@ -62,6 +62,7 @@
 #include "utility.h"
 #include "pkt_wrapper.h"
 #include "pkt_rules.h"
+#include "pkt_dump.h"
 
 struct Log *head = NULL;
 struct netstatStruct netstatData[NETSTAT_ENTRIES] = { 0 };
@@ -3512,6 +3513,10 @@ int32_t main(int32_t argc, char **argv)
 
     MyHashesSetup();
     init_mongo_connection();
+
+#ifdef DUMP_PCAP
+    open_pcap_file("dump.pcap");
+#endif
 
     if (stats_interval > 0)
         rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);

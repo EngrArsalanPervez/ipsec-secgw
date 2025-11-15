@@ -67,6 +67,10 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
         // Replace and free original
         rte_pktmbuf_free(pkts[i]);
         pkts[i] = new_m;
+
+#ifdef DUMP_PCAP
+        dump_packet(new_m);
+#endif
     }
 }
 
