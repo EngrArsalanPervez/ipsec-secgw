@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <rte_ether.h>
-#include <rte_ip4.h>
+#include <rte_ip.h>
 
 typedef struct {
     struct rte_ether_addr src_mac;
