@@ -59,13 +59,11 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
         uint32_t src_ip = active_rules[portid].src_ip;
         uint32_t dst_ip = active_rules[portid].dst_ip;
 
-        /*    
         // Print using the copy
         pkt_rules_t tmp_rule = {
             .src_mac = src_mac, .dst_mac = dst_mac, .src_ip = src_ip, .dst_ip = dst_ip
         };
         print_pkt_rules(&tmp_rule);
-        */
 
         struct rte_mbuf *new_m =
                 prepend_eth_ip_manual(pkts[i], pool, &src_mac, &dst_mac, src_ip, dst_ip);
