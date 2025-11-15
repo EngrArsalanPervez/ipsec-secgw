@@ -53,20 +53,30 @@ struct rte_mbuf *prepend_eth_ip_manual(struct rte_mbuf *orig, struct rte_mempool
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool,
                      uint16_t portid)
 {
+    pkt_rules_t *active_rules = RTE_PER_LCORE(lcore_active_rules);
+    if (!active_rules) {
+        printf("ERROR: Active_rules not found\n");
+        exit(1);
+    }
+
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        pkt_rules_t *active_rules =
-                RTE_PER_LCORE(lcore_active_rules); // print_pkt_rules(&active_rules[portid]);
+        if (portid >= RTE_MAX_ETHPORTS) {
+            RTE_LOG(ERR, USER1, "Invalid portid %u\n", portid);
+            continue;
+        }
+
+        print_pkt_rules(&active_rules[portid]);
+
         struct rte_mbuf *new_m = prepend_eth_ip_manual(pkts[i], pool, &active_rules[portid].src_mac,
                                                        &active_rules[portid].dst_mac,
                                                        active_rules[portid].src_ip,
                                                        active_rules[portid].dst_ip);
 
-        if (new_m == NULL) {
+        if (!new_m) {
             RTE_LOG(WARNING, USER1, "Encapsulation failed for packet %u — keeping original\n", i);
             continue;
         }
 
-        // Replace and free original
         rte_pktmbuf_free(pkts[i]);
         pkts[i] = new_m;
 
