@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
+#include <rte_build_config.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -94,7 +95,7 @@ struct appStatsStruct {
     struct udpServicesStruct udpServicesData;
 };
 
-extern struct appStatsStruct appStatsData[4];
+extern struct appStatsStruct appStatsData[RTE_MAX_ETHPORTS];
 
 void printAppStats(void);
 void tcpServices(uint16_t port, uint16_t portid);
