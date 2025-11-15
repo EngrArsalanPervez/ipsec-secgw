@@ -56,6 +56,13 @@ const pkt_rules_t pkt_rules_h2[RTE_MAX_ETHPORTS] = {
             .dst_ip = RTE_IPV4(40, 40, 40, 2) },
 };
 
+const pkt_rules_t pkt_rules_l1[RTE_MAX_ETHPORTS] = {
+    [0] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf1 } },
+            .dst_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x02 } },
+            .src_ip = RTE_IPV4(20, 20, 20, 1),
+            .dst_ip = RTE_IPV4(20, 20, 20, 2) },
+};
+
 const pkt_rules_t pkt_rules_l2[RTE_MAX_ETHPORTS] = {
     [0] = { .src_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x02 } },
             .dst_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf1 } },
@@ -63,11 +70,25 @@ const pkt_rules_t pkt_rules_l2[RTE_MAX_ETHPORTS] = {
             .dst_ip = RTE_IPV4(20, 20, 20, 1) },
 };
 
+const pkt_rules_t pkt_rules_l3[RTE_MAX_ETHPORTS] = {
+    [0] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf2 } },
+            .dst_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x03 } },
+            .src_ip = RTE_IPV4(30, 30, 30, 1),
+            .dst_ip = RTE_IPV4(30, 30, 30, 2) },
+};
+
 const pkt_rules_t pkt_rules_l4[RTE_MAX_ETHPORTS] = {
     [0] = { .src_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x03 } },
             .dst_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf2 } },
             .src_ip = RTE_IPV4(30, 30, 30, 2),
             .dst_ip = RTE_IPV4(30, 30, 30, 1) },
+};
+
+const pkt_rules_t pkt_rules_l5[RTE_MAX_ETHPORTS] = {
+    [0] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf3 } },
+            .dst_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x04 } },
+            .src_ip = RTE_IPV4(40, 40, 40, 1),
+            .dst_ip = RTE_IPV4(40, 40, 40, 2) },
 };
 
 const pkt_rules_t pkt_rules_l6[RTE_MAX_ETHPORTS] = {
@@ -92,12 +113,24 @@ int config_hclos_lclos(char *optarg)
         client_ports_add(2);
         client_ports_add(3);
         return 0;
+    } else if (strcmp(optarg, "L1") == 0) {
+        active_rules = pkt_rules_l1;
+        client_ports_add(0);
+        return 0;
     } else if (strcmp(optarg, "L2") == 0) {
         active_rules = pkt_rules_l2;
         client_ports_add(0);
         return 0;
+    } else if (strcmp(optarg, "L3") == 0) {
+        active_rules = pkt_rules_l3;
+        client_ports_add(0);
+        return 0;
     } else if (strcmp(optarg, "L4") == 0) {
         active_rules = pkt_rules_l4;
+        client_ports_add(0);
+        return 0;
+    } else if (strcmp(optarg, "L5") == 0) {
+        active_rules = pkt_rules_l5;
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L6") == 0) {
