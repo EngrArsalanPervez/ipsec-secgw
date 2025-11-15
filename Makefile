@@ -55,7 +55,8 @@ endif
 CFLAGS += -DALLOW_EXPERIMENTAL_API
 CFLAGS += -Wno-address-of-packed-member
 
-
+CFLAGS += -g -O0 -fsanitize=address,undefined
+LDFLAGS += -fsanitize=address,undefined
 LDFLAGS_EXTRA = -lcjson -lnats -lpthread -lssl -lcrypto -lpcap -lcurl -lmongoc-1.0 -lbson-1.0
 
 
