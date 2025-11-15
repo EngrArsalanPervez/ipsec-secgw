@@ -9,7 +9,7 @@
 #include <rte_mbuf.h>
 #include <rte_hexdump.h>
 
-#define DUMP_PCAP
+// #define DUMP_PCAP
 
 void open_pcap_file(const char *filename);
 void dump_packet(struct rte_mbuf *pkt);
