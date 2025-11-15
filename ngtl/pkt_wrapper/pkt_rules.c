@@ -1,5 +1,4 @@
 #include "pkt_rules.h"
-#include <cstdint>
 
 pkt_rules_t pkt_rules[RTE_MAX_ETHPORTS] = { 0 };
 client_ports_t client_ports = { 0 };
