@@ -62,12 +62,6 @@ int config_hclos_lclos(char *optarg)
         client_ports.ports[client_ports.total++] = 1;
         client_ports.ports[client_ports.total++] = 2;
         client_ports.ports[client_ports.total++] = 3;
-
-        for (uint8_t i = 0; i < client_ports.total; i++) {
-            printf("CLIENT_PORT: %u\n", client_ports.ports[i]);
-        }
-        exit(1);
-
         return 0;
     } else if (strcmp(optarg, "L2") == 0) {
         rte_memcpy(pkt_rules, pkt_rules_l2, sizeof(pkt_rules_h1));
