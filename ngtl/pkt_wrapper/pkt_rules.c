@@ -81,7 +81,7 @@ int config_hclos_lclos(char *optarg)
 
 uint8_t check_client_port(uint8_t portid)
 {
-    for (uint8_t i; i < client_ports.total; i++) {
+    for (uint8_t i = 0; i < client_ports.total; i++) {
         if (portid == client_ports.ports[i])
             return 1;
     }
