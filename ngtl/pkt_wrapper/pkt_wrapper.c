@@ -54,10 +54,10 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
                      uint16_t portid)
 {
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        struct rte_ether_addr src_mac = active_rules[portid].src_mac;
-        struct rte_ether_addr dst_mac = active_rules[portid].dst_mac;
-        uint32_t src_ip = active_rules[portid].src_ip;
-        uint32_t dst_ip = active_rules[portid].dst_ip;
+        const struct rte_ether_addr src_mac = active_rules[portid].src_mac;
+        const struct rte_ether_addr dst_mac = active_rules[portid].dst_mac;
+        const uint32_t src_ip = active_rules[portid].src_ip;
+        const uint32_t dst_ip = active_rules[portid].dst_ip;
 
         // Print using the copy
         pkt_rules_t tmp_rule = {

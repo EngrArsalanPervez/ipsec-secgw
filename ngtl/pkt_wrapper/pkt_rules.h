@@ -8,10 +8,10 @@
 #include <rte_lcore.h>
 
 typedef struct {
-    struct rte_ether_addr src_mac;
-    struct rte_ether_addr dst_mac;
-    uint32_t src_ip;
-    uint32_t dst_ip;
+    const struct rte_ether_addr src_mac;
+    const struct rte_ether_addr dst_mac;
+    const uint32_t src_ip;
+    const uint32_t dst_ip;
 } pkt_rules_t;
 
 extern const pkt_rules_t *active_rules;
