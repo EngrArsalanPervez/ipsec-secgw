@@ -1,6 +1,6 @@
 #include "pkt_rules.h"
 
-const pkt_rules_t *active_rules = NULL;
+RTE_DECLARE_PER_LCORE(const pkt_rules_t *, lcore_active_rules);
 client_ports_t client_ports;
 
 void client_ports_init(void)
@@ -102,39 +102,66 @@ int config_hclos_lclos(char *optarg)
 {
     client_ports_init();
 
+    uint32_t lcore_id;
+
     if (strcmp(optarg, "H1") == 0) {
-        active_rules = pkt_rules_h1;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_h1; // switch rules for this core
+        }
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "H2") == 0) {
-        active_rules = pkt_rules_h2;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_h2; // switch rules for this core
+        }
         client_ports_add(0);
         client_ports_add(1);
         client_ports_add(2);
         client_ports_add(3);
         return 0;
     } else if (strcmp(optarg, "L1") == 0) {
-        active_rules = pkt_rules_l1;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_l1; // switch rules for this core
+        }
+
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L2") == 0) {
-        active_rules = pkt_rules_l2;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_l2; // switch rules for this core
+        }
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L3") == 0) {
-        active_rules = pkt_rules_l3;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_l3; // switch rules for this core
+        }
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L4") == 0) {
-        active_rules = pkt_rules_l4;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_l4; // switch rules for this core
+        }
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L5") == 0) {
-        active_rules = pkt_rules_l5;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_l5; // switch rules for this core
+        }
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L6") == 0) {
-        active_rules = pkt_rules_l6;
+        RTE_LCORE_FOREACH(lcore_id)
+        {
+            RTE_PER_LCORE(lcore_active_rules) = pkt_rules_l6; // switch rules for this core
+        }
         client_ports_add(0);
         return 0;
     }
