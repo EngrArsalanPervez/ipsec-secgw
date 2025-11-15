@@ -138,6 +138,7 @@ void updateAppStatsToDB(void)
                 BCON_DOUBLE(appStatsData[portid].tcpServicesData.tcpTypeELASTICSEARCH),
                 "tcpTypeMONGODB", BCON_DOUBLE(appStatsData[portid].tcpServicesData.tcpTypeMONGODB),
                 "tcpTypeUNKNOWN", BCON_DOUBLE(appStatsData[portid].tcpServicesData.tcpTypeUNKNOWN),
+                "udpTypeIKEV2", BCON_DOUBLE(appStatsData[portid].udpServicesData.udpTypeIKEv2),
                 "udpTypeDNS", BCON_DOUBLE(appStatsData[portid].udpServicesData.udpTypeDNS),
                 "udpTypeDHCP", BCON_DOUBLE(appStatsData[portid].udpServicesData.udpTypeDHCP),
                 "udpTypeNTP", BCON_DOUBLE(appStatsData[portid].udpServicesData.udpTypeNTP),
