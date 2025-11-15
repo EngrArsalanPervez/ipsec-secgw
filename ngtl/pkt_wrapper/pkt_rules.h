@@ -6,6 +6,7 @@
 #include <rte_ip.h>
 #include <stdbool.h>
 #include <rte_lcore.h>
+#include <rte_per_lcore.h>
 
 typedef struct {
     struct rte_ether_addr src_mac;
