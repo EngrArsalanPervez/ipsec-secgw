@@ -1,7 +1,6 @@
 #ifndef _PKT_RULES_H_
 #define _PKT_RULES_H_
 
-#include <cstdint>
 #include <stdint.h>
 #include <rte_ether.h>
 #include <rte_ip.h>
