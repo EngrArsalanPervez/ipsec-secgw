@@ -105,10 +105,19 @@ int config_hclos_lclos(char *optarg)
     uint32_t lcore_id;
 
     if (strcmp(optarg, "H1") == 0) {
-        RTE_LCORE_FOREACH(lcore_id)
-        {
-            lcore_active_rules[lcore_id] = (pkt_rules_t *)pkt_rules_h1;
-        }
+        lcore_active_rules[0] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[1] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[2] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[3] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[4] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[5] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[6] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[7] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[8] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[9] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[10] = (pkt_rules_t *)pkt_rules_h1;
+        lcore_active_rules[11] = (pkt_rules_t *)pkt_rules_h1;
+
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "H2") == 0) {
