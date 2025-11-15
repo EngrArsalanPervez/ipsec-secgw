@@ -14,7 +14,7 @@ typedef struct {
     uint32_t dst_ip;
 } pkt_rules_t;
 
-extern pkt_rules_t active_rules[RTE_MAX_ETHPORTS];
+extern const pkt_rules_t *active_rules;
 
 #define MAX_CLIENT_PORTS RTE_MAX_ETHPORTS
 
