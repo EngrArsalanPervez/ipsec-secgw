@@ -142,29 +142,3 @@ int config_hclos_lclos(char *optarg)
     }
     return -1;
 }
-
-void print_pkt_rules(const pkt_rules_t *r)
-{
-    if (!r) {
-        printf("NULL pkt_rules_t pointer\n");
-        return;
-    }
-
-    uint32_t src_ip = r->src_ip;
-    uint32_t dst_ip = r->dst_ip;
-
-    printf("src_mac=%02X:%02X:%02X:%02X:%02X:%02X, "
-           "dst_mac=%02X:%02X:%02X:%02X:%02X:%02X, "
-           "src_ip=%u.%u.%u.%u, "
-           "dst_ip=%u.%u.%u.%u\n",
-
-           r->src_mac.addr_bytes[0], r->src_mac.addr_bytes[1], r->src_mac.addr_bytes[2],
-           r->src_mac.addr_bytes[3], r->src_mac.addr_bytes[4], r->src_mac.addr_bytes[5],
-
-           r->dst_mac.addr_bytes[0], r->dst_mac.addr_bytes[1], r->dst_mac.addr_bytes[2],
-           r->dst_mac.addr_bytes[3], r->dst_mac.addr_bytes[4], r->dst_mac.addr_bytes[5],
-
-           (src_ip >> 24) & 0xFF, (src_ip >> 16) & 0xFF, (src_ip >> 8) & 0xFF, src_ip & 0xFF,
-
-           (dst_ip >> 24) & 0xFF, (dst_ip >> 16) & 0xFF, (dst_ip >> 8) & 0xFF, dst_ip & 0xFF);
-}

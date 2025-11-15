@@ -364,7 +364,6 @@ struct ipsec_core_statistics core_statistics[RTE_MAX_LCORE];
 /* Print out statistics on packet distribution */
 static void print_stats_cb(__rte_unused void *param)
 {
-    return;
     uint64_t total_packets_dropped, total_packets_tx, total_packets_rx;
     float burst_percent, rx_per_call, tx_per_call;
     unsigned int coreid;
@@ -1518,17 +1517,6 @@ void ipsec_poll_mode_worker(void)
                 handle_packets(pkts, nb_rx, portid, lastPktTime);
 
                 if (client_ports_contains(portid)) {
-                    const struct rte_ether_addr src_mac = active_rules[portid].src_mac;
-                    const struct rte_ether_addr dst_mac = active_rules[portid].dst_mac;
-                    const uint32_t src_ip = active_rules[portid].src_ip;
-                    const uint32_t dst_ip = active_rules[portid].dst_ip;
-
-                    // Print using the copy
-                    pkt_rules_t tmp_rule = {
-                        .src_mac = src_mac, .dst_mac = dst_mac, .src_ip = src_ip, .dst_ip = dst_ip
-                    };
-                    print_pkt_rules(&tmp_rule);
-
                     encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
                 }
 
