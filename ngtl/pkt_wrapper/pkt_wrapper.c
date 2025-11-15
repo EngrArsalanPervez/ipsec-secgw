@@ -53,7 +53,9 @@ struct rte_mbuf *prepend_eth_ip_manual(struct rte_mbuf *orig, struct rte_mempool
 void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool,
                      uint16_t portid)
 {
-    pkt_rules_t *active_rules = RTE_PER_LCORE(lcore_active_rules);
+    uint32_t lcore_id = rte_lcore_id();
+    pkt_rules_t *active_rules = lcore_active_rules[lcore_id];
+
     if (!active_rules) {
         printf("ERROR: Active_rules not found\n");
         exit(1);

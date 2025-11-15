@@ -6,7 +6,6 @@
 #include <rte_ip.h>
 #include <stdbool.h>
 #include <rte_lcore.h>
-#include <rte_per_lcore.h>
 
 typedef struct {
     struct rte_ether_addr src_mac;
@@ -20,7 +19,7 @@ extern const pkt_rules_t pkt_rules_h2[RTE_MAX_ETHPORTS];
 extern const pkt_rules_t pkt_rules_l2[RTE_MAX_ETHPORTS];
 extern const pkt_rules_t pkt_rules_l4[RTE_MAX_ETHPORTS];
 
-RTE_DECLARE_PER_LCORE(pkt_rules_t *, lcore_active_rules);
+extern pkt_rules_t *lcore_active_rules[RTE_MAX_LCORE];
 
 #define MAX_CLIENT_PORTS RTE_MAX_ETHPORTS
 
