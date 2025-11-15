@@ -698,7 +698,7 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t 
 
     prepare_tx_burst(m_table, n, port, qconf);
 
-    if (port == 0) {
+    if (client_ports_contains(port)) {
         decapsulate_pkt(m_table, n);
     }
 
