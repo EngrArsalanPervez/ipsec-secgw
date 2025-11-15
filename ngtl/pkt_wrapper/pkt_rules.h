@@ -20,7 +20,7 @@ extern const pkt_rules_t pkt_rules_h2[RTE_MAX_ETHPORTS];
 extern const pkt_rules_t pkt_rules_l2[RTE_MAX_ETHPORTS];
 extern const pkt_rules_t pkt_rules_l4[RTE_MAX_ETHPORTS];
 
-RTE_EXTERN_PER_LCORE(const pkt_rules_t *, lcore_active_rules);
+RTE_DECLARE_PER_LCORE(pkt_rules_t *, lcore_active_rules);
 
 #define MAX_CLIENT_PORTS RTE_MAX_ETHPORTS
 
