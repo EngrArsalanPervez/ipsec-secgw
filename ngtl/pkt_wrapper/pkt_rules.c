@@ -31,7 +31,7 @@ bool client_ports_add(uint8_t port)
 }
 
 const pkt_rules_t pkt_rules_h1[RTE_MAX_ETHPORTS] = {
-    [0] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff } },
+    [0] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf0 } },
             .dst_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x01 } },
             .src_ip = RTE_IPV4(10, 10, 10, 1),
             .dst_ip = RTE_IPV4(10, 10, 10, 2) },
@@ -39,7 +39,7 @@ const pkt_rules_t pkt_rules_h1[RTE_MAX_ETHPORTS] = {
 
 const pkt_rules_t pkt_rules_h2[RTE_MAX_ETHPORTS] = {
     [0] = { .src_mac = { .addr_bytes = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x01 } },
-            .dst_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf0 } },
+            .dst_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff } },
             .src_ip = RTE_IPV4(10, 10, 10, 2),
             .dst_ip = RTE_IPV4(10, 10, 10, 1) },
     [1] = { .src_mac = { .addr_bytes = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xf1 } },
