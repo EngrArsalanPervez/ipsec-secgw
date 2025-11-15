@@ -61,6 +61,7 @@
 #include "sub.h"
 #include "utility.h"
 #include "pkt_wrapper.h"
+#include "pkt_rules.h"
 
 struct Log *head = NULL;
 struct netstatStruct netstatData[NETSTAT_ENTRIES] = { 0 };
@@ -1515,7 +1516,7 @@ void ipsec_poll_mode_worker(void)
                 handle_packets(pkts, nb_rx, portid, lastPktTime);
 
                 if (portid == 0) {
-                    encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool);
+                    encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
                 }
 
                 core_stats_update_rx(nb_rx, pkts);
@@ -1853,18 +1854,6 @@ static int parse_schedule_type(struct eh_conf *conf, const char *optarg)
     }
 
     return 0;
-}
-
-int config_hclos_lclos(char *optarg)
-{
-    if (strcmp(optarg, "LEFT") == 0) {
-        device_type = 1;
-        return 0;
-    } else if (strcmp(optarg, "RIGHT") == 0) {
-        device_type = 0;
-        return 0;
-    } else
-        return -1;
 }
 
 static int32_t parse_args(int32_t argc, char **argv, struct eh_conf *eh_conf)

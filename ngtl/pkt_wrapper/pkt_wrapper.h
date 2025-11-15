@@ -11,9 +11,10 @@
 #include <rte_memcpy.h>
 #include <rte_byteorder.h>
 
-extern uint8_t device_type;
+#include "pkt_rules.h"
 
-void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool);
+void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool,
+                     uint16_t portid);
 void decapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts);
 
 #endif

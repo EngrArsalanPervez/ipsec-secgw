@@ -1,7 +1,5 @@
 #include "pkt_wrapper.h"
 
-uint8_t device_type = 0; // LEFT or RIGHT
-
 // Prepend Ethernet + IPv4 header and copy original payload
 struct rte_mbuf *prepend_eth_ip_manual(struct rte_mbuf *orig, struct rte_mempool *pool,
                                        const struct rte_ether_addr *src_mac,
@@ -52,25 +50,14 @@ struct rte_mbuf *prepend_eth_ip_manual(struct rte_mbuf *orig, struct rte_mempool
     return new_m;
 }
 
-void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool)
+void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool *pool,
+                     uint16_t portid)
 {
-    struct rte_ether_addr src_mac, dst_mac;
-    uint32_t src_ip, dst_ip;
-
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        if (device_type == 1) {
-            rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &src_mac);
-            rte_ether_unformat_addr("11:22:33:44:55:01", &dst_mac);
-            src_ip = RTE_IPV4(10, 10, 10, 1);
-            dst_ip = RTE_IPV4(10, 10, 10, 2);
-        } else {
-            rte_ether_unformat_addr("aa:bb:cc:dd:ee:ff", &dst_mac);
-            rte_ether_unformat_addr("11:22:33:44:55:01", &src_mac);
-            src_ip = RTE_IPV4(10, 10, 10, 2);
-            dst_ip = RTE_IPV4(10, 10, 10, 1);
-        }
-        struct rte_mbuf *new_m =
-                prepend_eth_ip_manual(pkts[i], pool, &src_mac, &dst_mac, src_ip, dst_ip);
+        struct rte_mbuf *new_m = prepend_eth_ip_manual(pkts[i], pool, &pkt_rules[portid].src_mac,
+                                                       &pkt_rules[portid].dst_mac,
+                                                       pkt_rules[portid].src_ip,
+                                                       pkt_rules[portid].dst_ip);
 
         if (new_m == NULL) {
             RTE_LOG(WARNING, USER1, "Encapsulation failed for packet %u — keeping original\n", i);
@@ -79,7 +66,6 @@ void encapsulate_pkt(struct rte_mbuf **pkts, uint8_t nb_pkts, struct rte_mempool
 
         // Replace and free original
         rte_pktmbuf_free(pkts[i]);
-
         pkts[i] = new_m;
     }
 }
