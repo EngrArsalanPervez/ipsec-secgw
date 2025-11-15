@@ -86,22 +86,22 @@ int config_hclos_lclos(char *optarg)
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "H2") == 0) {
-        rte_memcpy(pkt_rules, pkt_rules_h2, sizeof(pkt_rules_h1));
+        rte_memcpy(pkt_rules, pkt_rules_h2, sizeof(pkt_rules_h2));
         client_ports_add(0);
         client_ports_add(1);
         client_ports_add(2);
         client_ports_add(3);
         return 0;
     } else if (strcmp(optarg, "L2") == 0) {
-        rte_memcpy(pkt_rules, pkt_rules_l2, sizeof(pkt_rules_h1));
+        rte_memcpy(pkt_rules, pkt_rules_l2, sizeof(pkt_rules_l2));
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L4") == 0) {
-        rte_memcpy(pkt_rules, pkt_rules_l4, sizeof(pkt_rules_h1));
+        rte_memcpy(pkt_rules, pkt_rules_l4, sizeof(pkt_rules_l4));
         client_ports_add(0);
         return 0;
     } else if (strcmp(optarg, "L6") == 0) {
-        rte_memcpy(pkt_rules, pkt_rules_l6, sizeof(pkt_rules_h1));
+        rte_memcpy(pkt_rules, pkt_rules_l6, sizeof(pkt_rules_l6));
         client_ports_add(0);
         return 0;
     }
