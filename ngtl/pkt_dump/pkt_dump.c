@@ -39,3 +39,21 @@ void dump_packet(struct rte_mbuf *pkt)
     // Dump the packet to pcap
     pcap_dump((u_char *)pcap_dumper, &header, packet_data);
 }
+
+void print_mbuf_hex(const char *title, struct rte_mbuf *m)
+{
+    struct rte_mbuf *seg = m;
+    unsigned seg_idx = 0;
+
+    while (seg != NULL) {
+        printf("=== %s: segment %u ===\n", title ? title : "mbuf", seg_idx);
+        printf("pkt_len=%u, data_len=%u, data_off=%u\n", seg->pkt_len, seg->data_len,
+               seg->data_off);
+
+        // Dump the actual data in this segment
+        rte_hexdump(stdout, "segment data", rte_pktmbuf_mtod(seg, void *), seg->data_len);
+
+        seg = seg->next;
+        seg_idx++;
+    }
+}
