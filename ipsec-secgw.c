@@ -2,6 +2,8 @@
  * Copyright(c) 2016 Intel Corporation
  */
 
+#include "ngtl/db/db.h"
+#include <cstdint>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -1181,35 +1183,35 @@ void *logsManagerLcore(void *arg)
         rte_delay_us_sleep(1000); // sleep for 1 ms
     }
 }
-void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime)
+void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime, PORT_TYPE port_type)
 {
     unsigned char *pkt = rte_pktmbuf_mtod(buf, unsigned char *);
     struct rte_ether_hdr *ethHdr = (struct rte_ether_hdr *)pkt;
 
-    appStatsData[portid].eth++;
+    appStatsData[port_type].eth++;
 
     uint16_t ethType = rte_cpu_to_be_16(ethHdr->ether_type);
 
     switch (ethType) {
     case RTE_ETHER_TYPE_ARP: {
-        appStatsData[portid].ethTypeARP++;
+        appStatsData[port_type].ethTypeARP++;
         break;
     }
     case RTE_ETHER_TYPE_VLAN: {
-        appStatsData[portid].ethTypeVLAN++;
+        appStatsData[port_type].ethTypeVLAN++;
         break;
     }
     case RTE_ETHER_TYPE_IPV6: {
-        appStatsData[portid].ethTypeIPV6++;
+        appStatsData[port_type].ethTypeIPV6++;
         break;
     }
     case RTE_ETHER_TYPE_LLDP: {
-        appStatsData[portid].ethTypeLLDP++;
+        appStatsData[port_type].ethTypeLLDP++;
         break;
     }
     case RTE_ETHER_TYPE_IPV4: {
         struct netstatHashKeyStruct netstatHashKeyData = { 0 };
-        appStatsData[portid].ethTypeIPV4++;
+        appStatsData[port_type].ethTypeIPV4++;
 
         struct rte_ipv4_hdr *ip4Hdr;
         ip4Hdr = (struct rte_ipv4_hdr *)&pkt[14];
@@ -1219,11 +1221,11 @@ void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime)
 
         switch (ip4Hdr->next_proto_id) {
         case IPPROTO_TCP: {
-            appStatsData[portid].ipTypeTCP++;
+            appStatsData[port_type].ipTypeTCP++;
             struct rte_tcp_hdr *tcpHdr;
             tcpHdr = (struct rte_tcp_hdr *)&pkt[buf->l2_len];
-            tcpServices(rte_be_to_cpu_16(tcpHdr->src_port), portid);
-            tcpServices(rte_be_to_cpu_16(tcpHdr->dst_port), portid);
+            tcpServices(rte_be_to_cpu_16(tcpHdr->src_port), port_type);
+            tcpServices(rte_be_to_cpu_16(tcpHdr->dst_port), port_type);
             // Key
             netstatHashKeyData.proto = IPPROTO_TCP;
             netstatHashKeyData.srcPort = tcpHdr->src_port;
@@ -1231,11 +1233,11 @@ void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime)
             break;
         }
         case IPPROTO_UDP: {
-            appStatsData[portid].ipTypeUDP++;
+            appStatsData[port_type].ipTypeUDP++;
             struct rte_udp_hdr *udpHdr;
             udpHdr = (struct rte_udp_hdr *)&pkt[buf->l2_len];
-            udpServices(rte_be_to_cpu_16(udpHdr->src_port), portid);
-            udpServices(rte_be_to_cpu_16(udpHdr->dst_port), portid);
+            udpServices(rte_be_to_cpu_16(udpHdr->src_port), port_type);
+            udpServices(rte_be_to_cpu_16(udpHdr->dst_port), port_type);
             // Key
             netstatHashKeyData.proto = IPPROTO_UDP;
             netstatHashKeyData.srcPort = udpHdr->src_port;
@@ -1245,35 +1247,35 @@ void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime)
         case IPPROTO_ICMP: {
             // Key
             netstatHashKeyData.proto = IPPROTO_ICMP;
-            appStatsData[portid].ipTypeICMP++;
+            appStatsData[port_type].ipTypeICMP++;
             break;
         }
         case IPPROTO_ESP: {
             // Key
             netstatHashKeyData.proto = IPPROTO_ESP;
-            appStatsData[portid].ipTypeESP++;
+            appStatsData[port_type].ipTypeESP++;
             break;
         }
         case IPPROTO_IGMP: {
             // Key
             netstatHashKeyData.proto = IPPROTO_IGMP;
-            appStatsData[portid].ipTypeIGMP++;
+            appStatsData[port_type].ipTypeIGMP++;
             break;
         }
         case IPPROTO_GRE: {
             // Key
             netstatHashKeyData.proto = IPPROTO_GRE;
-            appStatsData[portid].ipTypeGRE++;
+            appStatsData[port_type].ipTypeGRE++;
             break;
         }
         case 0x89: {
             // Key
             netstatHashKeyData.proto = 0x89;
-            appStatsData[portid].ipTypeOSPF++;
+            appStatsData[port_type].ipTypeOSPF++;
             break;
         }
         default: {
-            appStatsData[portid].ipTypeUNKNOWN++;
+            appStatsData[port_type].ipTypeUNKNOWN++;
             break;
         }
         }
@@ -1291,11 +1293,7 @@ void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime)
                 netstatData[ret].srcPort = netstatHashKeyData.srcPort;
                 netstatData[ret].dstPort = netstatHashKeyData.dstPort;
                 netstatData[ret].inPort = portid;
-                if (portid == 0) {
-                    netstatData[ret].outPort = 1;
-                } else {
-                    netstatData[ret].outPort = 0;
-                }
+                netstatData[ret]..outPort = get_outPort(portid);
                 netstatData[ret].lastPktTime = lastPktTime;
                 push(&head, ret);
             }
@@ -1307,17 +1305,18 @@ void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime)
         break;
     }
     default: {
-        appStatsData[portid].ethTypeUNKNOWN++;
+        appStatsData[port_type].ethTypeUNKNOWN++;
         break;
     }
     }
     return;
 }
 
-void handle_packets(struct rte_mbuf **pkts, uint16_t nb_pkts, uint16_t portid, uint64_t lastPktTime)
+void handle_packets(struct rte_mbuf **pkts, uint16_t nb_pkts, uint16_t portid, uint64_t lastPktTime,
+                    PORT_TYPE port_type)
 {
     for (uint8_t i = 0; i < nb_pkts; i++) {
-        dpi(pkts[i], portid, lastPktTime);
+        dpi(pkts[i], portid, lastPktTime, port_type);
     }
 }
 
@@ -1514,10 +1513,12 @@ void ipsec_poll_mode_worker(void)
 
             if (nb_rx > 0) {
                 uint64_t lastPktTime = rte_get_tsc_cycles() / rte_get_timer_hz();
-                handle_packets(pkts, nb_rx, portid, lastPktTime);
 
                 if (client_ports_contains(portid)) {
+                    handle_packets(pkts, nb_rx, portid, lastPktTime, CLIENT_PORT);
                     encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
+                } else {
+                    handle_packets(pkts, nb_rx, portid, lastPktTime, TUNNEL_PORT);
                 }
 
                 core_stats_update_rx(nb_rx, pkts);

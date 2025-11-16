@@ -24,7 +24,11 @@ typedef struct {
     uint64_t mask;
 } client_ports_t;
 
+typedef enum PORT_TYPE_e { CLIENT_PORT = 0, TUNNEL_PORT = 1 } PORT_TYPE;
+typedef enum DEVICE_TYPE_e { DUAL_PORT = 0, MULTI_PORT = 1 } DEVICE_TYPE;
+
 int config_hclos_lclos(char *optarg);
 bool client_ports_contains(uint8_t port);
+uint8_t get_outport(uint16_t portid);
 
 #endif
