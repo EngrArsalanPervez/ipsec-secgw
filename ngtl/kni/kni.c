@@ -483,8 +483,8 @@ int kni_alloc(uint16_t port_id)
                          rte_strerror(-ret));
 
             struct rte_ether_addr hardcoded_mac;
-            memcpy(hardcoded_mac.addr_bytes, { 0x02, 0x00, 0x00, 0x00, 0x00, 0x01 },
-                   RTE_ETHER_ADDR_LEN);
+            uint8_t mac[6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            memcpy(hardcoded_mac.addr_bytes, mac, RTE_ETHER_ADDR_LEN);
 
             rte_ether_addr_copy(&hardcoded_mac, (struct rte_ether_addr *)&conf.mac_addr);
 
