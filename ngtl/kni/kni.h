@@ -7,16 +7,6 @@
 #include <rte_mempool.h>
 #include <stdint.h>
 
-struct ipEncryptorTypeStruct {
-    uint8_t total_ports;
-    uint8_t client_port;
-    uint8_t kni_rx_core;
-    uint8_t kni_tx_core;
-    uint8_t vEth0_0_MAC[RTE_ETHER_ADDR_LEN];
-};
-extern struct ipEncryptorTypeStruct ipEncryptorType;
-extern uint8_t kni_configured;
-
 /* Max kernels threads per port */
 #define KNI_MAX_KTHREAD 32
 

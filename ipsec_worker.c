@@ -18,6 +18,7 @@
 
 #include "pkt_rules.h"
 #include "kni.h"
+#include "sub.h"
 
 struct port_drv_mode_data {
     struct rte_security_session *sess;

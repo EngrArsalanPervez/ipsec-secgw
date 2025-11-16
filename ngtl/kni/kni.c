@@ -40,8 +40,6 @@
 #include "stats.h"
 #include "pkt_rules.h"
 
-struct ipEncryptorTypeStruct ipEncryptorType = { 0 };
-
 #define MAX_PACKET_SZ 2048
 #define PKT_BURST_SZ 32
 #define NB_RXD 1024
@@ -485,7 +483,7 @@ int kni_alloc(uint16_t port_id)
                          rte_strerror(-ret));
 
             struct rte_ether_addr hardcoded_mac;
-            memcpy(hardcoded_mac.addr_bytes, ipEncryptorType.vEth0_0_MAC, RTE_ETHER_ADDR_LEN);
+            memcpy(hardcoded_mac.addr_bytes, &active_rules[0].src_mac, RTE_ETHER_ADDR_LEN);
 
             rte_ether_addr_copy(&hardcoded_mac, (struct rte_ether_addr *)&conf.mac_addr);
 
@@ -544,12 +542,12 @@ int kni_config(struct rte_mempool *shared_pool)
     promiscuous_on_kni = 1;
 
     char config_kni[32] = { 0 };
-    sprintf(config_kni, "(0,%d,%d,1)", ipEncryptorType.kni_rx_core, ipEncryptorType.kni_tx_core);
+    sprintf(config_kni, "(0,%d,%d,1)", device_type.kni_rx_core, device_type.kni_tx_core);
     ret = parse_config_kni(config_kni);
     if (ret < 0)
         rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
 
-    kni_alloc(ipEncryptorType.client_port);
+    kni_alloc(0);
 }
 
 int kni_main(void)
