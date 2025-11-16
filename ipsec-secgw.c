@@ -3,6 +3,7 @@
  */
 
 #include "ngtl/db/db.h"
+#include "ngtl/pkt_wrapper/pkt_rules.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -363,6 +364,100 @@ static inline void adjust_ipv6_pktlen(struct rte_mbuf *m, const struct rte_ipv6_
 
 struct ipsec_core_statistics core_statistics[RTE_MAX_LCORE];
 
+void updateInterfaceStats(void)
+{
+    if (device_type == DUAL_PORT) {
+        struct interfaceStatsStruct interfaceStatsDate = { 0 };
+        interfaceStatsDate.pktsReceived = core_statistics[0].rx;
+        interfaceStatsDate.pktsSent = core_statistics[1].tx;
+        interfaceStatsDate.pktsDropped = core_statistics[0].dropped;
+        strcpy(interfaceStatsDate.rxBytes, core_statistics[0].rxBytesNormalized);
+        strcpy(interfaceStatsDate.txBytes, core_statistics[1].txBytesNormalized);
+        sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[0].rxRate);
+        sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[1].txRate);
+        updateInterfaceStatsToDB(&interfaceStatsDate, 0);
+
+        // Interface1 Stats
+        interfaceStatsDate = (struct interfaceStatsStruct){ 0 };
+        interfaceStatsDate.pktsReceived = core_statistics[1].rx;
+        interfaceStatsDate.pktsSent = core_statistics[0].tx;
+        interfaceStatsDate.pktsDropped = core_statistics[1].dropped;
+        strcpy(interfaceStatsDate.rxBytes, core_statistics[1].rxBytesNormalized);
+        strcpy(interfaceStatsDate.txBytes, core_statistics[0].txBytesNormalized);
+        sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[1].rxRate);
+        sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[0].txRate);
+        updateInterfaceStatsToDB(&interfaceStatsDate, 1);
+    } else {
+        float rxRate = 0;
+        float txRate = 0;
+        char rxBytesNormalized[32];
+        char txBytesNormalized[32];
+        struct interfaceStatsStruct interfaceStatsDate = { 0 };
+
+        interfaceStatsDate.pktsReceived = core_statistics[0].rx + core_statistics[1].rx +
+                                          core_statistics[2].rx + core_statistics[3].rx;
+
+        interfaceStatsDate.pktsSent = core_statistics[4].tx + core_statistics[5].tx +
+                                      core_statistics[6].tx + core_statistics[7].tx;
+
+        interfaceStatsDate.pktsDropped = core_statistics[0].dropped + core_statistics[1].dropped +
+                                         core_statistics[2].dropped + core_statistics[3].dropped;
+
+        uint64_t rx_bytes = core_statistics[0].rx_bytes + core_statistics[1].rx_bytes +
+                            core_statistics[2].rx_bytes + core_statistics[3].rx_bytes;
+
+        uint64_t tx_bytes = core_statistics[4].tx_bytes + core_statistics[5].tx_bytes +
+                            core_statistics[6].tx_bytes + core_statistics[7].tx_bytes;
+
+        bytesNormalize(rx_bytes, rxBytesNormalized);
+        bytesNormalize(tx_bytes, txBytesNormalized);
+
+        strcpy(interfaceStatsDate.rxBytes, rxBytesNormalized);
+        strcpy(interfaceStatsDate.txBytes, txBytesNormalized);
+
+        rxRate = core_statistics[0].rxRate + core_statistics[1].rxRate + core_statistics[2].rxRate +
+                 core_statistics[3].rxRate;
+        txRate = core_statistics[0].txRate + core_statistics[1].txRate + core_statistics[2].txRate +
+                 core_statistics[3].txRate;
+
+        sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", rxRate);
+        sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", txRate);
+        updateInterfaceStatsToDB(&interfaceStatsDate, CLIENT_PORT);
+
+        interfaceStatsDate = (struct interfaceStatsStruct){ 0 };
+
+        interfaceStatsDate.pktsReceived = core_statistics[4].rx + core_statistics[5].rx +
+                                          core_statistics[6].rx + core_statistics[7].rx;
+
+        interfaceStatsDate.pktsSent = core_statistics[0].tx + core_statistics[1].tx +
+                                      core_statistics[2].tx + core_statistics[3].tx;
+
+        interfaceStatsDate.pktsDropped = core_statistics[4].dropped + core_statistics[5].dropped +
+                                         core_statistics[6].dropped + core_statistics[7].dropped;
+
+        rx_bytes = core_statistics[4].rx_bytes + core_statistics[5].rx_bytes +
+                   core_statistics[6].rx_bytes + core_statistics[7].rx_bytes;
+
+        tx_bytes = core_statistics[0].tx_bytes + core_statistics[1].tx_bytes +
+                   core_statistics[2].tx_bytes + core_statistics[3].tx_bytes;
+
+        bytesNormalize(rx_bytes, rxBytesNormalized);
+        bytesNormalize(tx_bytes, txBytesNormalized);
+
+        strcpy(interfaceStatsDate.rxBytes, rxBytesNormalized);
+        strcpy(interfaceStatsDate.txBytes, txBytesNormalized);
+
+        rxRate = core_statistics[4].rxRate + core_statistics[5].rxRate + core_statistics[6].rxRate +
+                 core_statistics[7].rxRate;
+        txRate = core_statistics[4].txRate + core_statistics[5].txRate + core_statistics[6].txRate +
+                 core_statistics[7].txRate;
+
+        sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", rxRate);
+        sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", txRate);
+        updateInterfaceStatsToDB(&interfaceStatsDate, TUNNEL_PORT);
+    }
+}
+
 /* Print out statistics on packet distribution */
 static void print_stats_cb(__rte_unused void *param)
 {
@@ -453,26 +548,7 @@ static void print_stats_cb(__rte_unused void *param)
     updateAppStatsToDB();
 
     // Interface0 Stats
-    struct interfaceStatsStruct interfaceStatsDate = { 0 };
-    interfaceStatsDate.pktsReceived = core_statistics[0].rx;
-    interfaceStatsDate.pktsSent = core_statistics[1].tx;
-    interfaceStatsDate.pktsDropped = core_statistics[0].dropped;
-    strcpy(interfaceStatsDate.rxBytes, core_statistics[0].rxBytesNormalized);
-    strcpy(interfaceStatsDate.txBytes, core_statistics[1].txBytesNormalized);
-    sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[0].rxRate);
-    sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[1].txRate);
-    updateInterfaceStatsToDB(&interfaceStatsDate, 0);
-
-    // Interface1 Stats
-    interfaceStatsDate = (struct interfaceStatsStruct){ 0 };
-    interfaceStatsDate.pktsReceived = core_statistics[1].rx;
-    interfaceStatsDate.pktsSent = core_statistics[0].tx;
-    interfaceStatsDate.pktsDropped = core_statistics[1].dropped;
-    strcpy(interfaceStatsDate.rxBytes, core_statistics[1].rxBytesNormalized);
-    strcpy(interfaceStatsDate.txBytes, core_statistics[0].txBytesNormalized);
-    sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[1].rxRate);
-    sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[0].txRate);
-    updateInterfaceStatsToDB(&interfaceStatsDate, 1);
+    updateInterfaceStats();
 
     // Device Stats
     struct deviceStatsStruct deviceStatsDate = { 0 };
