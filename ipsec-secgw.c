@@ -1293,7 +1293,7 @@ void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime, PORT_TYPE 
                 netstatData[ret].srcPort = netstatHashKeyData.srcPort;
                 netstatData[ret].dstPort = netstatHashKeyData.dstPort;
                 netstatData[ret].inPort = portid;
-                netstatData[ret]..outPort = get_outPort(portid);
+                netstatData[ret].outPort = get_outPort(portid);
                 netstatData[ret].lastPktTime = lastPktTime;
                 push(&head, ret);
             }
