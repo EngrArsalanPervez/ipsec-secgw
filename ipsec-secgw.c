@@ -1648,7 +1648,6 @@ void ipsec_poll_mode_worker(void)
                     struct rte_mbuf *pkts_new[MAX_PKT_BURST];
                     int32_t nb_rx_new = 0;
                     filter_ike_packets(nb_rx, pkts, &nb_rx_new, pkts_new);
-                    memcpy(pkts, pkts_new, sizeof(pkts_new));
                     memcpy(pkts, pkts_new, nb_rx_new * sizeof(struct rte_mbuf *));
                     nb_rx = nb_rx_new;
                 }
