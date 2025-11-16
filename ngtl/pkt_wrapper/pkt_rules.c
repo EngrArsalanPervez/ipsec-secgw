@@ -115,7 +115,11 @@ int config_hclos_lclos(char *optarg)
     if (strcmp(optarg, "H1") == 0) {
         active_rules = pkt_rules_h1;
         client_ports_add(0);
-        device_type = (device_type_t){ .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3 };
+        device_type = (device_type_t){ .type = DUAL_PORT,
+                                       .kni_rx_core = 2,
+                                       .kni_tx_core = 3,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x00 } } };
         return 0;
     } else if (strcmp(optarg, "H2") == 0) {
         active_rules = pkt_rules_h2;
@@ -123,37 +127,65 @@ int config_hclos_lclos(char *optarg)
         client_ports_add(1);
         client_ports_add(2);
         client_ports_add(3);
-        device_type = (device_type_t){ .type = MULTI_PORT, .kni_rx_core = 8, .kni_tx_core = 9 };
+        device_type = (device_type_t){ .type = MULTI_PORT,
+                                       .kni_rx_core = 8,
+                                       .kni_tx_core = 9,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x01 } } };
         return 0;
     } else if (strcmp(optarg, "L1") == 0) {
         active_rules = pkt_rules_l1;
         client_ports_add(0);
-        device_type = (device_type_t){ .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3 };
+        device_type = (device_type_t){ .type = DUAL_PORT,
+                                       .kni_rx_core = 2,
+                                       .kni_tx_core = 3,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x02 } } };
         return 0;
     } else if (strcmp(optarg, "L2") == 0) {
         active_rules = pkt_rules_l2;
         client_ports_add(0);
-        device_type = (device_type_t){ .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3 };
+        device_type = (device_type_t){ .type = DUAL_PORT,
+                                       .kni_rx_core = 2,
+                                       .kni_tx_core = 3,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x03 } } };
         return 0;
     } else if (strcmp(optarg, "L3") == 0) {
         active_rules = pkt_rules_l3;
         client_ports_add(0);
-        device_type = (device_type_t){ .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3 };
+        device_type = (device_type_t){ .type = DUAL_PORT,
+                                       .kni_rx_core = 2,
+                                       .kni_tx_core = 3,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x04 } } };
         return 0;
     } else if (strcmp(optarg, "L4") == 0) {
         active_rules = pkt_rules_l4;
         client_ports_add(0);
-        device_type = (device_type_t){ .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3 };
+        device_type = (device_type_t){ .type = DUAL_PORT,
+                                       .kni_rx_core = 2,
+                                       .kni_tx_core = 3,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x05 } } };
         return 0;
     } else if (strcmp(optarg, "L5") == 0) {
         active_rules = pkt_rules_l5;
         client_ports_add(0);
-        device_type = (device_type_t){ .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3 };
+        device_type = (device_type_t){ .type = DUAL_PORT,
+                                       .kni_rx_core = 2,
+                                       .kni_tx_core = 3,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x06 } } };
         return 0;
     } else if (strcmp(optarg, "L6") == 0) {
         active_rules = pkt_rules_l5;
         client_ports_add(0);
-        device_type = (device_type_t){ .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3 };
+        device_type = (device_type_t){ .type = DUAL_PORT,
+                                       .kni_rx_core = 2,
+                                       .kni_tx_core = 3,
+                                       .vEth0 = { .addr_bytes = { 0xee, 0xbb, 0xcc, 0x00, 0x00,
+                                                                  0x07 } } };
         return 0;
     }
     return -1;

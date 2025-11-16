@@ -24,6 +24,7 @@ typedef struct {
     DEVICE_TYPE type;
     uint8_t kni_rx_core;
     uint8_t kni_tx_core;
+    struct rte_ether_addr vEth0;
 } device_type_t;
 extern device_type_t device_type;
 
