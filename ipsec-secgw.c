@@ -549,7 +549,11 @@ static void print_stats_cb(__rte_unused void *param)
     printf("\nKNI statistics =====================================");
     print_kni_stats();
 
-    printf("\nApp Statistics======================================\n");
+    printf("\nNATS statistics===================================\n");
+    printf("IKE String_C2S: %s\n", ike_string[0]);
+    printf("IKE String_S2C: %s\n", ike_string[1]);
+
+    printf("App Statistics======================================\n");
     // printAppStats();
     updateAppStatsToDB();
 
