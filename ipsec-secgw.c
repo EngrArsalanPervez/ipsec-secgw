@@ -2,8 +2,6 @@
  * Copyright(c) 2016 Intel Corporation
  */
 
-#include "ngtl/db/db.h"
-#include "ngtl/pkt_wrapper/pkt_rules.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -71,6 +69,11 @@ struct Log *head = NULL;
 struct netstatStruct netstatData[NETSTAT_ENTRIES] = { 0 };
 struct hashStats netstatStats = { 0 };
 struct appTimeStruct appTime = { 0 };
+
+extern struct kni_interface_stats kni_stats[RTE_MAX_ETHPORTS];
+extern struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
+char ike_string[2][1024];
+uint8_t ike_string_count = 0;
 
 volatile bool force_quit;
 
@@ -539,9 +542,12 @@ static void print_stats_cb(__rte_unused void *param)
            "\nTotal packets bytes sent:     %18" PRIu64 "\nTotal packets bytes received:%19s"
            "\nTotal packets bytes sent:%23s"
            "\nTotal received rate:\t\t%12.2f Mb/s"
-           "\nTotal sent rate:\t\t%12.2f Mb/s\n",
+           "\nTotal sent rate:\t\t%12.2f Mb/s",
            total_packets_rx, total_packets_tx, total_packets_dropped, total_rxBytes, total_txBytes,
            total_rxBytesNormalized, total_txBytesNormalized, total_rxRate, total_txRate);
+
+    printf("\nKNI statistics =====================================");
+    print_kni_stats();
 
     printf("App Statistics======================================\n");
     // printAppStats();
@@ -2969,6 +2975,9 @@ static void signal_handler(int signum)
     if (signum == SIGINT || signum == SIGTERM) {
         printf("\n\nSignal %d received, preparing to exit...\n", signum);
         force_quit = true;
+        nats_running = 0;
+        signal_handler_kni();
+        exit(1);
     }
 }
 
@@ -3590,6 +3599,7 @@ int32_t main(int32_t argc, char **argv)
 
     MyHashesSetup();
     init_mongo_connection();
+    kni_config(socket_ctx[0].mbuf_pool);
 
 #ifdef DUMP_PCAP
     open_pcap_file("dump.pcap");

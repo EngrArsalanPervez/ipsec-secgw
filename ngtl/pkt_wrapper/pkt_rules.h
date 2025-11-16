@@ -24,8 +24,6 @@ typedef struct {
     DEVICE_TYPE type;
     uint8_t kni_rx_core;
     uint8_t kni_tx_core;
-    uint8_t hash_core;
-    uint8_t log_core;
 } device_type_t;
 extern device_type_t device_type;
 

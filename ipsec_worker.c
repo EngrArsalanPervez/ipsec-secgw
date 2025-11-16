@@ -17,6 +17,7 @@
 #include "ipsec_worker.h"
 
 #include "pkt_rules.h"
+#include "kni.h"
 
 struct port_drv_mode_data {
     struct rte_security_session *sess;
@@ -940,18 +941,24 @@ int ipsec_launch_one_lcore(void *args)
     uint32_t lcore_id = rte_lcore_id();
 
     if (lcore_id == device_type.kni_rx_core) {
-    } else if (lcore_id == device_type.kni_tx_core) {
-    } else if (lcore_id == device_type.hash_core) {
         pthread_t hash_tid;
         if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
             rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
         }
-        return 0;
-    } else if (lcore_id == device_type.log_core) {
         pthread_t log_tid;
         if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
             rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
         }
+
+        kni_main();
+        return 0;
+    } else if (lcore_id == device_type.kni_tx_core) {
+        pthread_t sub_tid;
+        if (pthread_create(&sub_tid, NULL, subscriber_thread, NULL) != 0) {
+            rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
+        }
+
+        kni_main();
         return 0;
     }
 
