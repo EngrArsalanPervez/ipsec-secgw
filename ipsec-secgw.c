@@ -3,7 +3,7 @@
  */
 
 #include "ngtl/db/db.h"
-#include <cstdint>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>

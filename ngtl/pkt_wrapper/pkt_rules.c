@@ -155,7 +155,7 @@ int config_hclos_lclos(char *optarg)
 
 uint8_t get_outport(uint16_t portid)
 {
-    if (device_type == dual_port)
+    if (device_type == DUAL_PORT)
         return (portid == 1) ? 0 : 1;
 
     // Mapping: (0->4), (1->5), (2->6), (3->7), (4->0), (5->1), (6->2), (7->3)
