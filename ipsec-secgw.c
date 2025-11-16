@@ -549,7 +549,7 @@ static void print_stats_cb(__rte_unused void *param)
     printf("\nKNI statistics =====================================");
     print_kni_stats();
 
-    printf("App Statistics======================================\n");
+    printf("\nApp Statistics======================================\n");
     // printAppStats();
     updateAppStatsToDB();
 

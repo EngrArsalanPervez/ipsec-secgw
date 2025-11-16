@@ -134,7 +134,7 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts, uint16_t port
         if (sport == 500 || dport == 500 || sport == 4500 || dport == 4500) {
             // Send Out
 
-            uint16_t tunnel_port = 1; //get_route(m, rt, PKT_TYPE_PLAIN_IPV4);
+            uint16_t tunnel_port = get_route(m, rt, PKT_TYPE_PLAIN_IPV4);
 
             appStatsData[TUNNEL_PORT].udpServicesData.udpTypeIKEv2++;
 

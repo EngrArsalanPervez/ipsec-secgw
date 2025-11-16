@@ -37,5 +37,6 @@ struct lcore_conf_ev_tx_int_port_wrkr {
 void ipsec_poll_mode_worker(void);
 
 int ipsec_launch_one_lcore(void *args);
+uint16_t get_route(struct rte_mbuf *pkt, struct route_table *rt, enum pkt_type type);
 
 #endif /* _IPSEC_WORKER_H_ */
