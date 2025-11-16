@@ -88,8 +88,10 @@ void *subscriber_thread(void *arg)
     }
 
 cleanup:
-    if (s != NATS_OK)
+    if (s != NATS_OK) {
         fprintf(stderr, "NATS error: %s\n", natsStatus_GetText(s));
+        exit(1);
+    }
 
     natsSubscription_Destroy(sub);
     natsConnection_Destroy(conn);
