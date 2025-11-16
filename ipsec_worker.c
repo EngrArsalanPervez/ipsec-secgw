@@ -2,6 +2,7 @@
  * Copyright(c) 2010-2016 Intel Corporation
  * Copyright (C) 2020 Marvell International Ltd.
  */
+#include <curl/curl.h>
 #include <rte_acl.h>
 #include <rte_event_eth_tx_adapter.h>
 #include <rte_lpm.h>
@@ -14,6 +15,8 @@
 #include "ipsec.h"
 #include "ipsec-secgw.h"
 #include "ipsec_worker.h"
+
+#include "pkt_rules.h"
 
 struct port_drv_mode_data {
     struct rte_security_session *sess;
@@ -936,22 +939,23 @@ int ipsec_launch_one_lcore(void *args)
 {
     uint32_t lcore_id = rte_lcore_id();
 
-    if (lcore_id == 8) {
+    if (lcore_id == device_type.kni_rx_core) {
+    } else if (lcore_id == device_type.kni_tx_core) {
+    } else if (lcore_id == device_type.hash_core) {
         pthread_t hash_tid;
         if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
             rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
         }
+        return 0;
+    } else if (lcore_id == device_type.log_core) {
         pthread_t log_tid;
         if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
             rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
         }
         return 0;
-    } else if (lcore_id > 8) {
-        return 0;
     }
 
     struct eh_conf *conf;
-
     conf = (struct eh_conf *)args;
 
     if (conf->mode == EH_PKT_TRANSFER_MODE_POLL) {

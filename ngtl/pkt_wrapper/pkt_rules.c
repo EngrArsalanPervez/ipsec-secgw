@@ -1,9 +1,15 @@
 #include "pkt_rules.h"
 #include <stdint.h>
 
-const pkt_rules_t *active_rules = NULL;
+typedef struct {
+    uint8_t ports[RTE_MAX_ETHPORTS];
+    uint8_t total;
+    uint64_t mask;
+} client_ports_t;
 client_ports_t client_ports;
-DEVICE_TYPE device_type;
+
+const pkt_rules_t *active_rules = NULL;
+device_type_t device_type;
 
 void client_ports_init(void)
 {
@@ -109,7 +115,9 @@ int config_hclos_lclos(char *optarg)
     if (strcmp(optarg, "H1") == 0) {
         active_rules = pkt_rules_h1;
         client_ports_add(0);
-        device_type = DUAL_PORT;
+        device_type = (device_type_t){
+            .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3, .hash_core = 2, .log_core = 3
+        };
         return 0;
     } else if (strcmp(optarg, "H2") == 0) {
         active_rules = pkt_rules_h2;
@@ -117,37 +125,51 @@ int config_hclos_lclos(char *optarg)
         client_ports_add(1);
         client_ports_add(2);
         client_ports_add(3);
-        device_type = MULTI_PORT;
+        device_type = (device_type_t){
+            .type = MULTI_PORT, .kni_rx_core = 8, .kni_tx_core = 9, .hash_core = 10, .log_core = 11
+        };
         return 0;
     } else if (strcmp(optarg, "L1") == 0) {
         active_rules = pkt_rules_l1;
         client_ports_add(0);
-        device_type = DUAL_PORT;
+        device_type = (device_type_t){
+            .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3, .hash_core = 2, .log_core = 3
+        };
         return 0;
     } else if (strcmp(optarg, "L2") == 0) {
         active_rules = pkt_rules_l2;
         client_ports_add(0);
-        device_type = DUAL_PORT;
+        device_type = (device_type_t){
+            .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3, .hash_core = 2, .log_core = 3
+        };
         return 0;
     } else if (strcmp(optarg, "L3") == 0) {
         active_rules = pkt_rules_l3;
         client_ports_add(0);
-        device_type = DUAL_PORT;
+        device_type = (device_type_t){
+            .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3, .hash_core = 2, .log_core = 3
+        };
         return 0;
     } else if (strcmp(optarg, "L4") == 0) {
         active_rules = pkt_rules_l4;
         client_ports_add(0);
-        device_type = DUAL_PORT;
+        device_type = (device_type_t){
+            .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3, .hash_core = 2, .log_core = 3
+        };
         return 0;
     } else if (strcmp(optarg, "L5") == 0) {
         active_rules = pkt_rules_l5;
         client_ports_add(0);
-        device_type = DUAL_PORT;
+        device_type = (device_type_t){
+            .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3, .hash_core = 2, .log_core = 3
+        };
         return 0;
     } else if (strcmp(optarg, "L6") == 0) {
         active_rules = pkt_rules_l5;
         client_ports_add(0);
-        device_type = DUAL_PORT;
+        device_type = (device_type_t){
+            .type = DUAL_PORT, .kni_rx_core = 2, .kni_tx_core = 3, .hash_core = 2, .log_core = 3
+        };
         return 0;
     }
     return -1;
@@ -155,7 +177,7 @@ int config_hclos_lclos(char *optarg)
 
 uint8_t get_outport(uint16_t portid)
 {
-    if (device_type == DUAL_PORT)
+    if (device_type.type == DUAL_PORT)
         return (portid == 1) ? 0 : 1;
 
     // Mapping: (0->4), (1->5), (2->6), (3->7), (4->0), (5->1), (6->2), (7->3)

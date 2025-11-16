@@ -366,7 +366,7 @@ struct ipsec_core_statistics core_statistics[RTE_MAX_LCORE];
 
 void updateInterfaceStats(void)
 {
-    if (device_type == DUAL_PORT) {
+    if (device_type.type == DUAL_PORT) {
         struct interfaceStatsStruct interfaceStatsDate = { 0 };
         interfaceStatsDate.pktsReceived = core_statistics[0].rx;
         interfaceStatsDate.pktsSent = core_statistics[1].tx;
