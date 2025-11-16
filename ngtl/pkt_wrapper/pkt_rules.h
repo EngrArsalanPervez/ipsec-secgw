@@ -21,7 +21,7 @@ typedef struct {
 extern const pkt_rules_t *active_rules;
 
 typedef struct {
-    DEVICE_TYPE_e type;
+    DEVICE_TYPE type;
     uint8_t kni_rx_core;
     uint8_t kni_tx_core;
     uint8_t hash_core;
