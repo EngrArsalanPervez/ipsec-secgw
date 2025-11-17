@@ -1,11 +1,7 @@
 # Global
 
 ```bash
-1. Device Type: HCLOS/LCLOS
-  # NCA-5230 or NCA_1515
-  # Toggle Button
-
-2. IKEve Settings:
+1. IKEve Settings:
   a. Enable/Disable
   b. Timer in Hours
 ```
