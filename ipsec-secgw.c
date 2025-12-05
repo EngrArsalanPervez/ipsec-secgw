@@ -786,11 +786,11 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t 
     m_table = (struct rte_mbuf **)qconf->tx_mbufs[port].m_table;
 
     prepare_tx_burst(m_table, n, port, qconf);
-
+    /*
     if (client_ports_contains(port)) {
         decapsulate_pkt(m_table, n);
     }
-
+    */
     ret = rte_eth_tx_burst(port, queueid, m_table, n);
 
     core_stats_update_tx(ret, m_table);
@@ -1269,6 +1269,130 @@ void *logsManagerLcore(void *arg)
         rte_delay_us_sleep(1000); // sleep for 1 ms
     }
 }
+static void send_packets_eth(struct rte_mbuf *pkts[], uint8_t port, uint8_t qid)
+{
+    if (rte_eth_tx_burst(port, qid, pkts, 1) == 0) {
+        rte_pktmbuf_free(pkts[0]);
+        return;
+    }
+}
+
+static inline struct rte_mbuf *clone_mbuf(struct rte_mbuf *m)
+{
+    struct rte_mempool *mp = socket_ctx[0].mbuf_pool;
+
+    if (unlikely(m == NULL || mp == NULL))
+        return NULL;
+
+    struct rte_mbuf *m_clone = rte_pktmbuf_clone(m, mp);
+    if (unlikely(m_clone == NULL)) {
+        RTE_LOG(ERR, USER1, "Failed to clone mbuf: %s\n", rte_strerror(rte_errno));
+        return NULL;
+    }
+
+    return m_clone;
+}
+
+#define MY_MAC0 0x00
+#define MY_MAC1 0x90
+#define MY_MAC2 0x0b
+#define MY_MAC3 0xc0
+#define MY_MAC4 0xf7
+#define MY_MAC5 0x27
+
+const char *MY_IPS_STRING[] = { "8.8.8.2" };
+
+uint32_t MY_IPS_DECIMAL[] = { 134744066 };
+
+size_t num_my_ips_decimal = sizeof(MY_IPS_DECIMAL) / sizeof(MY_IPS_DECIMAL[0]);
+
+static void handle_packet_arp(struct rte_mbuf *buf)
+{
+    uint8_t vlan = 0;
+    unsigned char *pkt = rte_pktmbuf_mtod(buf, unsigned char *);
+
+    if (pkt[vlan + 20] == 0x00 && pkt[vlan + 21] == 0x01) {
+        // ARP Request
+
+        uint32_t myIPAddrDec = ((uint32_t)pkt[vlan + 38] << 24) | ((uint32_t)pkt[vlan + 39] << 16) |
+                               ((uint32_t)pkt[vlan + 40] << 8) | ((uint32_t)pkt[vlan + 41]);
+
+        int i = 0;
+        int found = 0;
+
+        while (i < num_my_ips_decimal) {
+            if (MY_IPS_DECIMAL[i] == myIPAddrDec) {
+                found = 1;
+                break;
+            }
+            i++;
+        }
+
+        if (found) { // Dst MAC
+            pkt[0] = pkt[6];
+            pkt[1] = pkt[7];
+            pkt[2] = pkt[8];
+            pkt[3] = pkt[9];
+            pkt[4] = pkt[10];
+            pkt[5] = pkt[11];
+
+            // Src Mac
+            pkt[6] = MY_MAC0;
+            pkt[7] = MY_MAC1;
+            pkt[8] = MY_MAC2;
+            pkt[9] = MY_MAC3;
+            pkt[10] = MY_MAC4;
+            pkt[11] = MY_MAC5;
+
+            // Arp Reply
+            pkt[vlan + 20] = 0x00;
+            pkt[vlan + 21] = 0x02;
+
+            // Sender MAC Addr
+            pkt[vlan + 22] = MY_MAC0;
+            pkt[vlan + 23] = MY_MAC1;
+            pkt[vlan + 24] = MY_MAC2;
+            pkt[vlan + 25] = MY_MAC3;
+            pkt[vlan + 26] = MY_MAC4;
+            pkt[vlan + 27] = MY_MAC5;
+
+            uint8_t target_ip[4];
+            target_ip[0] = pkt[vlan + 28];
+            target_ip[1] = pkt[vlan + 29];
+            target_ip[2] = pkt[vlan + 30];
+            target_ip[3] = pkt[vlan + 31];
+
+            // Sender IP Addr
+            pkt[vlan + 28] = pkt[vlan + 38];
+            pkt[vlan + 29] = pkt[vlan + 39];
+            pkt[vlan + 30] = pkt[vlan + 40];
+            pkt[vlan + 31] = pkt[vlan + 41];
+
+            // Target MAC Addr
+            pkt[vlan + 32] = pkt[0];
+            pkt[vlan + 33] = pkt[1];
+            pkt[vlan + 34] = pkt[2];
+            pkt[vlan + 35] = pkt[3];
+            pkt[vlan + 36] = pkt[4];
+            pkt[vlan + 37] = pkt[5];
+
+            // Target IP Addr
+            pkt[vlan + 38] = target_ip[0];
+            pkt[vlan + 39] = target_ip[1];
+            pkt[vlan + 40] = target_ip[2];
+            pkt[vlan + 41] = target_ip[3];
+
+#ifdef DUMP_PCAP
+            dump_packet(buf);
+#endif
+
+            struct rte_mbuf *clone = clone_mbuf(buf);
+            send_packets_eth(&clone, 1, 0);
+            return;
+        }
+    }
+}
+
 void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime, PORT_TYPE port_type)
 {
     unsigned char *pkt = rte_pktmbuf_mtod(buf, unsigned char *);
@@ -1280,6 +1404,9 @@ void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime, PORT_TYPE 
 
     switch (ethType) {
     case RTE_ETHER_TYPE_ARP: {
+        if (port_type == TUNNEL_PORT) {
+            handle_packet_arp(buf);
+        }
         appStatsData[port_type].ethTypeARP++;
         break;
     }
@@ -1646,7 +1773,7 @@ void ipsec_poll_mode_worker(void)
 
                 if (client_ports_contains(portid)) {
                     handle_packets(pkts, nb_rx, portid, lastPktTime, CLIENT_PORT);
-                    encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
+                    //encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
                 } else {
                     handle_packets(pkts, nb_rx, portid, lastPktTime, TUNNEL_PORT);
                     struct rte_mbuf *pkts_new[MAX_PKT_BURST];
