@@ -787,9 +787,9 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t 
 
     prepare_tx_burst(m_table, n, port, qconf);
 
-    if (client_ports_contains(port)) {
+    /*if (client_ports_contains(port)) {
         decapsulate_pkt(m_table, n);
-    }
+    }*/
 
     ret = rte_eth_tx_burst(port, queueid, m_table, n);
 
@@ -1646,7 +1646,7 @@ void ipsec_poll_mode_worker(void)
 
                 if (client_ports_contains(portid)) {
                     handle_packets(pkts, nb_rx, portid, lastPktTime, CLIENT_PORT);
-                    encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
+                    //encapsulate_pkt(pkts, nb_rx, socket_ctx[0].mbuf_pool, portid);
                 } else {
                     handle_packets(pkts, nb_rx, portid, lastPktTime, TUNNEL_PORT);
                     struct rte_mbuf *pkts_new[MAX_PKT_BURST];
